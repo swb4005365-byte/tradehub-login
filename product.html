@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>تفاصيل المنتج - TradeHub Pro</title>
+  <!-- PWA -->
+  <meta name="theme-color" content="#f59e0b" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-title" content="TradeHub Pro" />
+  <link rel="manifest" href="manifest.json" />
+  <link rel="apple-touch-icon" href="icons/icon-192x192.png" />
+  <link rel="icon" type="image/svg+xml" href="icons/icon.svg" />
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" />
+  <link rel="stylesheet" href="css/style.css" />
+  <script src="js/auth.js"></script>
+  <style>
+    .product-page { padding: 24px 0 60px; }
+    .product-layout { display: grid; grid-template-columns: 1fr 1.2fr 320px; gap: 24px; align-items: start; }
+
+    /* Gallery */
+    .gallery { position: sticky; top: 80px; }
+    .main-img { border-radius: var(--radius-md); overflow: hidden; background: #f8f8f8; aspect-ratio: 1; margin-bottom: 12px; border: 1px solid var(--border); display:flex; align-items:center; justify-content:center; }
+    .main-img img { width:100%; height:100%; object-fit:cover; }
+    .thumb-row { display: flex; gap: 8px; }
+    .thumb { width: 70px; height: 70px; border-radius: var(--radius-sm); border: 2px solid var(--border); cursor: pointer; overflow: hidden; transition: var(--transition); }
+    .thumb:hover, .thumb.active { border-color: var(--primary); }
+    .thumb img { width:100%; height:100%; object-fit:cover; }
+
+    /* Info */
+    .product-details {}
+    .detail-badges { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
+    .detail-badge { padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 600; }
+    .badge-green { background: #e8f8f0; color: var(--success); }
+    .badge-orange { background: var(--primary-light); color: var(--primary); }
+    .badge-blue { background: #e3f0ff; color: #0984e3; }
+    .product-title { font-size: 22px; font-weight: 800; color: var(--secondary); margin-bottom: 10px; line-height: 1.4; }
+    .rating-row { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; }
+    .stars-big { color: var(--warning); font-size: 18px; }
+    .reviews-link { color: var(--primary); font-size: 13px; text-decoration: underline; cursor: pointer; }
+    .price-box { background: var(--primary-light); border-radius: var(--radius-md); padding: 16px 20px; margin-bottom: 20px; border: 1px solid rgba(255,107,53,0.15); }
+    .price-tiers { display: flex; gap: 12px; flex-wrap: wrap; }
+    .price-tier { text-align: center; padding: 10px 16px; background: white; border-radius: var(--radius-sm); border: 1.5px solid var(--border); flex: 1; min-width: 80px; transition:var(--transition); cursor:pointer; }
+    .price-tier:hover, .price-tier.active { border-color: var(--primary); background: var(--primary); color: white; }
+    .price-tier:hover .tier-price, .price-tier.active .tier-price { color: white; }
+    .tier-qty { font-size: 11px; color: var(--text-light); margin-bottom: 4px; }
+    .price-tier:hover .tier-qty, .price-tier.active .tier-qty { color: rgba(255,255,255,0.8); }
+    .tier-price { font-size: 18px; font-weight: 800; color: var(--primary); }
+
+    .specs-table { width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: 13px; }
+    .specs-table tr { border-bottom: 1px solid var(--border); }
+    .specs-table td:first-child { padding: 10px 16px; background: var(--bg-light); font-weight: 600; color: var(--text-dark); width: 40%; }
+    .specs-table td:last-child { padding: 10px 16px; color: var(--text-mid); }
+
+    /* Order Box */
+    .order-box { background: white; border: 1px solid var(--border); border-radius: var(--radius-md); padding: 20px; position: sticky; top: 80px; }
+    .order-box h3 { font-size: 16px; font-weight: 700; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid var(--border); }
+    .qty-input-row { display: flex; align-items: center; gap: 8px; margin-bottom: 16px; }
+    .qty-btn { width: 34px; height: 34px; border: 1.5px solid var(--border); border-radius: var(--radius-sm); background: white; font-size: 18px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: var(--transition); }
+    .qty-btn:hover { border-color: var(--primary); color: var(--primary); }
+    .qty-val { flex: 1; text-align: center; padding: 8px; border: 1.5px solid var(--border); border-radius: var(--radius-sm); font-size: 15px; font-weight: 700; outline: none; }
+    .total-calc { background: var(--bg-light); padding: 12px; border-radius: var(--radius-sm); margin-bottom: 16px; font-size: 13px; }
+    .total-calc span { float: left; font-weight: 700; color: var(--primary); font-size: 16px; }
+    .action-btns { display: flex; flex-direction: column; gap: 10px; }
+    .btn-order { padding: 14px; background: var(--primary); color: white; border: none; border-radius: var(--radius-md); font-size: 15px; font-weight: 700; cursor: pointer; transition: var(--transition); }
+    .btn-order:hover { background: var(--primary-dark); }
+    .btn-sample { padding: 12px; background: white; color: var(--secondary); border: 2px solid var(--secondary); border-radius: var(--radius-md); font-size: 14px; font-weight: 600; cursor: pointer; transition: var(--transition); }
+    .btn-sample:hover { background: var(--secondary); color: white; }
+    .btn-rfq { padding: 12px; background: white; color: var(--primary); border: 2px solid var(--primary); border-radius: var(--radius-md); font-size: 14px; font-weight: 600; cursor: pointer; transition: var(--transition); }
+    .btn-rfq:hover { background: var(--primary); color: white; }
+    .supplier-mini { border: 1px solid var(--border); border-radius: var(--radius-md); padding: 14px; margin-top: 16px; }
+    .supplier-mini-top { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+    .supplier-mini-logo { width: 44px; height: 44px; border-radius: 50%; object-fit: cover; }
+    .supplier-mini-name { font-size: 14px; font-weight: 700; }
+    .supplier-mini-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 12px; }
+    .stat-mini { text-align: center; background: var(--bg-light); padding: 8px; border-radius: var(--radius-sm); }
+    .stat-mini strong { display: block; font-size: 16px; color: var(--primary); }
+
+    /* Tabs */
+    .tab-nav { display: flex; gap: 0; border-bottom: 2px solid var(--border); margin: 24px 0 20px; }
+    .tab-btn { padding: 12px 24px; border: none; background: none; font-size: 14px; font-weight: 600; color: var(--text-mid); cursor: pointer; border-bottom: 3px solid transparent; margin-bottom: -2px; transition: var(--transition); }
+    .tab-btn.active { color: var(--primary); border-bottom-color: var(--primary); }
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+
+    /* Reviews */
+    .review-item { padding: 16px 0; border-bottom: 1px solid var(--border); }
+    .review-header { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+    .reviewer-avatar { width: 36px; height: 36px; border-radius: 50%; background: var(--primary); color: white; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 700; }
+    .reviewer-name { font-size: 13px; font-weight: 700; }
+    .review-stars { color: var(--warning); font-size: 13px; }
+    .review-date { font-size: 11px; color: var(--text-light); margin-right: auto; }
+    .review-text { font-size: 13px; color: var(--text-mid); line-height: 1.6; }
+
+    /* Related */
+    .related-section { margin-top: 40px; }
+
+    @media (max-width: 1100px) { .product-layout { grid-template-columns: 1fr 1fr; } .order-box { grid-column: 1/-1; position: static; } }
+    @media (max-width: 700px) { .product-layout { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+
+<!-- TOP BAR -->
+<div class="top-bar">
+  <div class="container">
+    <div class="top-bar-links">
+      <a href="index.html"><i class="fas fa-home"></i> الرئيسية</a>
+    </div>
+    <div class="top-bar-links">
+      <a href="auth.html"><i class="fas fa-sign-in-alt"></i> تسجيل الدخول</a>
+      <span>|</span>
+      <a href="seller.html"><i class="fas fa-store"></i> بيع على TradeHub</a>
+    </div>
+  </div>
+</div>
+
+<header>
+  <div class="container header-main">
+    <a href="index.html" class="logo">
+      <span class="logo-dynamic">
+        <div class="logo-icon"><i class="fas fa-globe-asia"></i></div>
+        Trade<span>Hub</span>
+      </span>
+    </a>
+    <div class="search-bar">
+      <input type="text" class="search-input" id="searchInput" placeholder="ابحث عن منتجات..." />
+      <select class="search-select" id="searchCategory"><option value="">جميع الفئات</option></select>
+      <button class="search-btn" onclick="doSearch()"><i class="fas fa-search"></i></button>
+    </div>
+    <div class="header-actions">
+      <button class="header-btn" onclick="window.location='cart.html'">
+        <i class="fas fa-shopping-cart"></i><span>السلة</span>
+        <span class="badge" id="cartCount">0</span>
+      </button>
+      <button class="header-btn" onclick="window.location='auth.html'">
+        <i class="fas fa-user-circle"></i><span>حسابي</span>
+      </button>
+    </div>
+  </div>
+</header>
+
+<nav>
+  <div class="container">
+    <div class="nav-inner">
+      <a href="index.html#categories" class="nav-link all-categories-btn"><i class="fas fa-th"></i> جميع الفئات</a>
+      <a href="products.html" class="nav-link"><i class="fas fa-fire"></i> المنتجات</a>
+      <a href="cart.html" class="nav-link"><i class="fas fa-shopping-cart"></i> السلة</a>
+      <a href="seller.html" class="nav-link"><i class="fas fa-chart-line"></i> لوحة البائع</a>
+    </div>
+  </div>
+</nav>
+
+<div class="container product-page">
+  <!-- Breadcrumb -->
+  <nav class="breadcrumb">
+    <a href="index.html">الرئيسية</a>
+    <span><i class="fas fa-chevron-left"></i></span>
+    <a href="products.html">المنتجات</a>
+    <span><i class="fas fa-chevron-left"></i></span>
+    <span id="productBreadcrumb">تفاصيل المنتج</span>
+  </nav>
+
+  <div id="productContent">
+    <div class="loading-spinner"><div class="spinner"></div></div>
+  </div>
+
+  <!-- Related Products -->
+  <div class="related-section">
+    <div class="section-header">
+      <h2 class="section-title"><i class="fas fa-layer-group"></i> منتجات مشابهة</h2>
+      <a href="products.html" class="see-all">عرض الكل <i class="fas fa-arrow-left"></i></a>
+    </div>
+    <div class="products-grid" id="relatedGrid">
+      <div class="loading-spinner" style="grid-column:1/-1"><div class="spinner"></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- Inquiry Modal -->
+<div class="modal-overlay" id="inquiryModal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3><i class="fas fa-envelope"></i> طلب عرض سعر</h3>
+      <button class="modal-close" onclick="document.getElementById('inquiryModal').classList.remove('open')">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label">المنتج</label>
+        <input type="text" class="form-control" id="inquiryProduct" readonly />
+      </div>
+      <div class="form-group">
+        <label class="form-label">اسمك الكامل</label>
+        <input type="text" class="form-control" placeholder="أدخل اسمك" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">البريد الإلكتروني</label>
+        <input type="email" class="form-control" placeholder="example@email.com" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">الكمية المطلوبة</label>
+        <input type="number" class="form-control" placeholder="أدخل الكمية" id="inquiryQty" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">رسالتك</label>
+        <textarea class="form-control" rows="3" placeholder="أدخل تفاصيل الطلب..."></textarea>
+      </div>
+      <button class="btn btn-primary" style="width:100%" onclick="sendInquiry()">
+        <i class="fas fa-paper-plane"></i> إرسال الطلب
+      </button>
+    </div>
+  </div>
+</div>
+
+<div class="toast-container" id="toastContainer"></div>
+
+<script src="js/main.js"></script>
+<script>
+let currentProduct = null;
+let currentQty = 1;
+
+async function loadProduct() {
+  const params = new URLSearchParams(location.search);
+  const id = params.get('id');
+  if (!id) { window.location.href = 'products.html'; return; }
+
+  try {
+    const res = await fetch(`tables/products/${id}`);
+    const p = await res.json();
+    if (!p || !p.id) { window.location.href = 'products.html'; return; }
+    currentProduct = p;
+    productsCache[p.id] = p;
+    document.getElementById('productBreadcrumb').textContent = p.name_ar || p.name;
+    document.title = `${p.name_ar || p.name} - TradeHub Pro`;
+    renderProduct(p);
+    loadRelated(p.category, p.id);
+  } catch {
+    document.getElementById('productContent').innerHTML = '<div class="empty-state"><i class="fas fa-exclamation-circle"></i><h3>تعذر تحميل المنتج</h3></div>';
+  }
+}
+
+function renderProduct(p) {
+  const stars = '★'.repeat(Math.floor(p.rating || 4)) + '☆'.repeat(5 - Math.floor(p.rating || 4));
+  document.getElementById('productContent').innerHTML = `
+  <div class="product-layout">
+    <!-- Gallery -->
+    <div class="gallery">
+      <div class="main-img">
+        <img src="${p.image_url || 'https://placehold.co/500x500/eee/999?text=Product'}" alt="${p.name_ar}" id="mainImg" />
+      </div>
+      <div class="thumb-row">
+        ${[p.image_url, 'https://placehold.co/300x300/eee/999?text=2', 'https://placehold.co/300x300/ddd/999?text=3', 'https://placehold.co/300x300/ccc/999?text=4'].map((img, i) => `
+        <div class="thumb ${i===0?'active':''}" onclick="switchImg('${img}', this)">
+          <img src="${img || 'https://placehold.co/300x300/eee/999?text=Product'}" alt="صورة ${i+1}" />
+        </div>`).join('')}
+      </div>
+    </div>
+
+    <!-- Details -->
+    <div class="product-details">
+      <div class="detail-badges">
+        ${p.in_stock ? '<span class="detail-badge badge-green"><i class="fas fa-check-circle"></i> متوفر في المخزون</span>' : '<span class="detail-badge" style="background:#fee;color:#e17055">غير متوفر</span>'}
+        ${p.discount ? `<span class="detail-badge badge-orange"><i class="fas fa-tag"></i> خصم ${p.discount}%</span>` : ''}
+        <span class="detail-badge badge-blue"><i class="fas fa-shield-alt"></i> مورد معتمد</span>
+      </div>
+      <h1 class="product-title">${p.name_ar || p.name}</h1>
+      <div class="rating-row">
+        <div class="stars-big">${stars}</div>
+        <strong>${p.rating || 4.5}</strong>
+        <span class="reviews-link">(${(p.reviews_count || 0).toLocaleString()} تقييم)</span>
+        <span style="font-size:13px;color:var(--text-light);margin-right:auto;">رقم المنتج: ${p.id}</span>
+      </div>
+
+      <div class="price-box">
+        <div style="font-size:13px;color:var(--text-mid);margin-bottom:10px;">الأسعار حسب الكمية (${p.unit || 'قطعة'})</div>
+        <div class="price-tiers">
+          <div class="price-tier active" onclick="selectTier(this, ${p.price_max})">
+            <div class="tier-qty">1 – 49</div>
+            <div class="tier-price">$${p.price_max}</div>
+          </div>
+          <div class="price-tier" onclick="selectTier(this, ${((p.price_min + p.price_max) / 2).toFixed(2)})">
+            <div class="tier-qty">50 – 199</div>
+            <div class="tier-price">$${((p.price_min + p.price_max) / 2).toFixed(2)}</div>
+          </div>
+          <div class="price-tier" onclick="selectTier(this, ${p.price_min})">
+            <div class="tier-qty">${p.min_order}+</div>
+            <div class="tier-price">$${p.price_min}</div>
+          </div>
+        </div>
+      </div>
+
+      <table class="specs-table">
+        <tr><td>المورد</td><td>${p.supplier || '—'} <i class="fas fa-check-circle" style="color:var(--success)"></i></td></tr>
+        <tr><td>الدولة</td><td>${p.supplier_country || '—'}</td></tr>
+        <tr><td>الحد الأدنى للطلب</td><td>${p.min_order || 1} ${p.unit || 'قطعة'}</td></tr>
+        <tr><td>وحدة البيع</td><td>${p.unit || 'قطعة'}</td></tr>
+        <tr><td>الفئة</td><td>${p.subcategory || '—'}</td></tr>
+        <tr><td>وقت التسليم</td><td>15 – 25 يوم عمل</td></tr>
+        <tr><td>شروط الدفع</td><td>T/T، L/C، Western Union</td></tr>
+      </table>
+
+      <!-- Tabs -->
+      <div class="tab-nav">
+        <button class="tab-btn active" onclick="openTab('description', this)">الوصف</button>
+        <button class="tab-btn" onclick="openTab('reviews', this)">التقييمات (${p.reviews_count || 0})</button>
+        <button class="tab-btn" onclick="openTab('shipping', this)">الشحن والتسليم</button>
+      </div>
+
+      <div id="description" class="tab-content active">
+        <p style="font-size:14px;line-height:2;color:var(--text-mid)">${p.description || 'لا يوجد وصف متاح لهذا المنتج.'}</p>
+        ${p.tags?.length ? `<div style="margin-top:16px;display:flex;gap:8px;flex-wrap:wrap">${p.tags.map(t=>`<span style="background:var(--bg-light);padding:4px 12px;border-radius:20px;font-size:12px;color:var(--text-mid)">#${t}</span>`).join('')}</div>` : ''}
+      </div>
+
+      <div id="reviews" class="tab-content">
+        <div style="display:flex;align-items:center;gap:20px;padding:16px 0;border-bottom:1px solid var(--border)">
+          <div style="text-align:center">
+            <div style="font-size:48px;font-weight:800;color:var(--primary)">${p.rating || 4.5}</div>
+            <div style="color:var(--warning);font-size:20px">${stars}</div>
+            <div style="font-size:12px;color:var(--text-light)">${(p.reviews_count || 0).toLocaleString()} تقييم</div>
+          </div>
+          <div style="flex:1">
+            ${[5,4,3,2,1].map(n => `
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+              <span style="font-size:12px;color:var(--text-mid);width:20px">${n}★</span>
+              <div style="flex:1;height:8px;background:var(--border);border-radius:4px;overflow:hidden">
+                <div style="width:${n===5?65:n===4?20:n===3?10:3}%;height:100%;background:var(--warning);border-radius:4px"></div>
+              </div>
+              <span style="font-size:12px;color:var(--text-light)">${n===5?65:n===4?20:n===3?10:3}%</span>
+            </div>`).join('')}
+          </div>
+        </div>
+        ${generateReviews()}
+      </div>
+
+      <div id="shipping" class="tab-content">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px">
+          <div style="background:var(--bg-light);padding:16px;border-radius:var(--radius-md)">
+            <h4 style="font-size:14px;margin-bottom:8px"><i class="fas fa-ship" style="color:var(--primary)"></i> شحن بحري</h4>
+            <p style="font-size:13px;color:var(--text-mid)">25 – 35 يوم عمل<br>$150 – $800</p>
+          </div>
+          <div style="background:var(--bg-light);padding:16px;border-radius:var(--radius-md)">
+            <h4 style="font-size:14px;margin-bottom:8px"><i class="fas fa-plane" style="color:var(--primary)"></i> شحن جوي</h4>
+            <p style="font-size:13px;color:var(--text-mid)">7 – 15 يوم عمل<br>$500 – $2000</p>
+          </div>
+        </div>
+        <p style="font-size:13px;color:var(--text-mid);line-height:2">يتوفر الشحن إلى أكثر من 190 دولة. تكاليف الشحن تُحسب حسب الوزن والوجهة. يُنصح بالتواصل مع المورد للحصول على عرض سعر دقيق للشحن.</p>
+      </div>
+    </div>
+
+    <!-- Order Box -->
+    <aside class="order-box">
+      <h3><i class="fas fa-shopping-bag"></i> طلب المنتج</h3>
+      <div class="form-group">
+        <label class="form-label">الكمية (${p.unit || 'قطعة'})</label>
+        <div class="qty-input-row">
+          <button class="qty-btn" onclick="changeQty(-1)">−</button>
+          <input type="number" class="qty-val" id="qtyInput" value="${p.min_order || 1}" min="${p.min_order || 1}" onchange="updateTotal()" />
+          <button class="qty-btn" onclick="changeQty(1)">+</button>
+        </div>
+        <small style="color:var(--text-light);font-size:11px">الحد الأدنى: ${p.min_order || 1} ${p.unit || 'قطعة'}</small>
+      </div>
+      <div class="total-calc">
+        <span>إجمالي التقدير</span>
+        <span id="totalPrice">$${p.price_min * (p.min_order || 1)}</span>
+        <div style="clear:both"></div>
+      </div>
+      <div class="action-btns">
+        <button class="btn-order" onclick="addToCart('${p.id}')">
+          <i class="fas fa-cart-plus"></i> أضف إلى السلة
+        </button>
+        <button class="btn-rfq" onclick="openInquiry('${p.id}', '${(p.name_ar || p.name).replace(/'/g, '')}')">
+          <i class="fas fa-envelope"></i> طلب عرض سعر
+        </button>
+        <button class="btn-sample">
+          <i class="fas fa-box"></i> طلب عينة
+        </button>
+      </div>
+
+      <div class="supplier-mini">
+        <div class="supplier-mini-top">
+          <img src="https://placehold.co/80x80/FF6B35/white?text=${(p.supplier || 'S')[0]}" class="supplier-mini-logo" alt="${p.supplier}" />
+          <div>
+            <div class="supplier-mini-name">${p.supplier || 'مورد'}</div>
+            <div style="font-size:12px;color:var(--text-light)"><i class="fas fa-map-marker-alt"></i> ${p.supplier_country || '—'}</div>
+          </div>
+        </div>
+        <div class="supplier-mini-stats">
+          <div class="stat-mini"><strong style="color:var(--success)">98%</strong>معدل الاستجابة</div>
+          <div class="stat-mini"><strong style="color:var(--warning)">4.8★</strong>التقييم</div>
+          <div class="stat-mini"><strong style="color:var(--primary)">12</strong>سنوات خبرة</div>
+          <div class="stat-mini"><strong>342</strong>منتج</div>
+        </div>
+        <button onclick="window.location='products.html?supplier=${encodeURIComponent(p.supplier || '')}'" style="width:100%;margin-top:12px;padding:8px;background:var(--bg-light);border:1px solid var(--border);border-radius:var(--radius-sm);font-size:13px;cursor:pointer;transition:var(--transition);">
+          <i class="fas fa-store"></i> عرض منتجات المورد
+        </button>
+      </div>
+
+      <div style="margin-top:16px;padding:12px;background:var(--bg-light);border-radius:var(--radius-sm)">
+        <div style="font-size:12px;color:var(--text-mid);display:flex;flex-direction:column;gap:6px">
+          <span><i class="fas fa-shield-alt" style="color:var(--success)"></i> حماية المشتري متاحة</span>
+          <span><i class="fas fa-undo" style="color:var(--primary)"></i> ضمان استرداد المال 30 يوم</span>
+          <span><i class="fas fa-lock" style="color:var(--accent)"></i> دفع آمن ومشفر</span>
+        </div>
+      </div>
+    </aside>
+  </div>`;
+
+  // Init qty
+  currentQty = parseInt(p.min_order) || 1;
+  updateTotal();
+}
+
+function generateReviews() {
+  const reviewData = [
+    { name: 'أحمد محمد', country: 'السعودية', rating: 5, text: 'منتج ممتاز! الجودة تفوق التوقعات والشحن كان سريعاً. أنصح بالتعامل مع هذا المورد.', date: 'منذ أسبوعين' },
+    { name: 'سارة علي', country: 'الإمارات', rating: 4, text: 'جودة جيدة جداً والسعر مناسب. التغليف كان احترافياً والتسليم في الموعد المحدد.', date: 'منذ شهر' },
+    { name: 'Omar K.', country: 'مصر', rating: 5, text: 'تجربة رائعة. المنتج مطابق للوصف تماماً والمورد متجاوب ومحترف.', date: 'منذ شهرين' }
+  ];
+  return reviewData.map(r => `
+    <div class="review-item">
+      <div class="review-header">
+        <div class="reviewer-avatar">${r.name[0]}</div>
+        <div>
+          <div class="reviewer-name">${r.name}</div>
+          <div class="review-stars">${'★'.repeat(r.rating)}${'☆'.repeat(5-r.rating)}</div>
+        </div>
+        <span class="review-date">${r.country} · ${r.date}</span>
+      </div>
+      <p class="review-text">${r.text}</p>
+    </div>`).join('');
+}
+
+function switchImg(src, el) {
+  document.getElementById('mainImg').src = src;
+  document.querySelectorAll('.thumb').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+}
+
+function openTab(id, btn) {
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById(id)?.classList.add('active');
+  btn.classList.add('active');
+}
+
+function selectTier(el, price) {
+  document.querySelectorAll('.price-tier').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  updateTotal(price);
+}
+
+let selectedPrice = null;
+function changeQty(delta) {
+  const input = document.getElementById('qtyInput');
+  if (!input) return;
+  const min = parseInt(input.min) || 1;
+  currentQty = Math.max(min, (parseInt(input.value) || min) + delta);
+  input.value = currentQty;
+  updateTotal();
+}
+
+function updateTotal(price) {
+  if (price) selectedPrice = price;
+  const p = currentProduct;
+  if (!p) return;
+  const unitPrice = selectedPrice || p.price_min;
+  const qty = parseInt(document.getElementById('qtyInput')?.value) || (p.min_order || 1);
+  const total = (unitPrice * qty).toFixed(2);
+  const el = document.getElementById('totalPrice');
+  if (el) el.textContent = `$${parseFloat(total).toLocaleString()}`;
+}
+
+async function loadRelated(category, excludeId) {
+  try {
+    const res = await fetch('tables/products?limit=20');
+    const data = await res.json();
+    const related = (data.data || []).filter(p => p.category === category && p.id !== excludeId).slice(0, 4);
+    const grid = document.getElementById('relatedGrid');
+    if (!related.length) { grid.innerHTML = ''; return; }
+    related.forEach(p => productsCache[p.id] = p);
+    grid.innerHTML = related.map(buildProductCard).join('');
+  } catch {
+    document.getElementById('relatedGrid').innerHTML = '';
+  }
+}
+
+function sendInquiry() {
+  showToast('تم إرسال طلب عرض السعر بنجاح ✅', 'success');
+  document.getElementById('inquiryModal').classList.remove('open');
+}
+
+loadProduct();
+</script>
+<!-- AI Assistant + PWA Manager -->
+<script src="js/countries.js"></script>
+<script src="js/whatsapp.js"></script>
+<script src="js/chatbot.js"></script>
+</body>
+</html>

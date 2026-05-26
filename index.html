@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TradeHub Pro - منصة التجارة الإلكترونية العالمية</title>
+
+  <!-- ===== PWA Meta Tags ===== -->
+  <meta name="theme-color" content="#f59e0b" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="TradeHub Pro" />
+  <meta name="application-name" content="TradeHub Pro" />
+  <meta name="msapplication-TileColor" content="#0f172a" />
+  <meta name="msapplication-TileImage" content="/icons/icon-144x144.png" />
+  <meta name="description" content="منصة TradeHub Pro للتجارة الإلكترونية - تسوق، بيع، وتواصل مع موردين عالميين" />
+
+  <!-- PWA Manifest -->
+  <link rel="manifest" href="manifest.json" />
+
+  <!-- Apple Touch Icons -->
+  <link rel="apple-touch-icon" sizes="192x192" href="icons/icon-192x192.png" />
+  <link rel="apple-touch-icon" sizes="512x512" href="icons/icon-512x512.png" />
+  <link rel="icon" type="image/svg+xml" href="icons/icon.svg" />
+  <link rel="shortcut icon" href="icons/icon.svg" />
+
+  <!-- ===== Fonts & Libraries ===== -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" />
+  <link rel="stylesheet" href="css/style.css" />
+  <script src="js/auth.js"></script>
+</head>
+<body>
+
+<!-- TOP BAR -->
+<div class="top-bar">
+  <div class="container">
+    <div class="top-bar-links">
+      <a href="#"><i class="fas fa-map-marker-alt"></i> المملكة العربية السعودية</a>
+      <span>|</span>
+      <a href="#">مرحباً بك في TradeHub Pro</a>
+    </div>
+    <div class="top-bar-links" id="topBarUserLinks">
+      <a href="auth.html"><i class="fas fa-sign-in-alt"></i> تسجيل الدخول</a>
+      <span>|</span>
+      <a href="auth.html?mode=register"><i class="fas fa-user-plus"></i> إنشاء حساب</a>
+      <span>|</span>
+      <a href="seller.html"><i class="fas fa-store"></i> بيع على TradeHub</a>
+      <span>|</span>
+      <a href="admin-login.html" style="color:#f59e0b"><i class="fas fa-shield-alt"></i> لوحة المدير</a>
+      <span>|</span>
+      <a href="#"><i class="fas fa-globe"></i> AR / EN</a>
+    </div>
+  </div>
+</div>
+
+<!-- HEADER -->
+<header>
+  <div class="container header-main">
+    <a href="index.html" class="logo">
+      <span class="logo-dynamic">
+        <div class="logo-icon"><i class="fas fa-globe-asia"></i></div>
+        Trade<span>Hub</span>
+      </span>
+    </a>
+
+    <div class="search-bar">
+      <input type="text" class="search-input" id="searchInput" placeholder="ابحث عن منتجات، موردين، شركات..." />
+      <select class="search-select" id="searchCategory">
+        <option value="">جميع الفئات</option>
+        <option value="cat1">الإلكترونيات</option>
+        <option value="cat2">الملابس</option>
+        <option value="cat3">الآلات</option>
+        <option value="cat4">المنزل</option>
+        <option value="cat5">الجمال</option>
+        <option value="cat6">السيارات</option>
+        <option value="cat7">الرياضة</option>
+        <option value="cat8">الأغذية</option>
+      </select>
+      <button class="search-btn" onclick="doSearch()">
+        <i class="fas fa-search"></i>
+      </button>
+    </div>
+
+    <div class="header-actions">
+      <button class="header-btn" onclick="window.location='cart.html'">
+        <i class="fas fa-shopping-cart"></i>
+        <span>السلة</span>
+        <span class="badge" id="cartCount">0</span>
+      </button>
+      <div id="headerUserMenu">
+        <button class="header-btn" onclick="window.location='auth.html'">
+          <i class="fas fa-user-circle"></i>
+          <span>حسابي</span>
+        </button>
+      </div>
+      <button class="header-btn" onclick="window.location='seller.html'">
+        <i class="fas fa-store"></i>
+        <span>بائع</span>
+      </button>
+    </div>
+  </div>
+</header>
+
+<!-- NAV -->
+<nav>
+  <div class="container">
+    <div class="nav-inner">
+      <a href="#categories" class="nav-link all-categories-btn"><i class="fas fa-th"></i> جميع الفئات</a>
+      <a href="products.html" class="nav-link active"><i class="fas fa-fire"></i> العروض الساخنة</a>
+      <a href="products.html?filter=new" class="nav-link"><i class="fas fa-star"></i> وصل حديثاً</a>
+      <a href="products.html?filter=bulk" class="nav-link"><i class="fas fa-boxes"></i> طلبات الجملة</a>
+      <a href="products.html?filter=verified" class="nav-link"><i class="fas fa-shield-alt"></i> موردون معتمدون</a>
+      <a href="#" class="nav-link"><i class="fas fa-truck"></i> الشحن المجاني</a>
+      <a href="seller.html" class="nav-link"><i class="fas fa-chart-line"></i> لوحة البائع</a>
+    </div>
+  </div>
+</nav>
+
+<!-- HERO SECTION -->
+<section class="hero-section">
+  <div class="container">
+    <div class="hero-grid">
+      <!-- Sidebar -->
+      <aside class="sidebar-cats">
+        <div class="sidebar-cat-title"><i class="fas fa-th"></i> تصفح الفئات</div>
+        <div class="sidebar-cat-item" onclick="filterByCategory('cat1')"><i class="fas fa-microchip"></i> الإلكترونيات <small style="margin-right:auto;color:#999">15.4K</small></div>
+        <div class="sidebar-cat-item" onclick="filterByCategory('cat2')"><i class="fas fa-tshirt"></i> الملابس والأزياء <small style="margin-right:auto;color:#999">23.1K</small></div>
+        <div class="sidebar-cat-item" onclick="filterByCategory('cat3')"><i class="fas fa-cogs"></i> الآلات والمعدات <small style="margin-right:auto;color:#999">8.9K</small></div>
+        <div class="sidebar-cat-item" onclick="filterByCategory('cat4')"><i class="fas fa-home"></i> المنزل والحديقة <small style="margin-right:auto;color:#999">12.3K</small></div>
+        <div class="sidebar-cat-item" onclick="filterByCategory('cat5')"><i class="fas fa-spa"></i> الجمال والصحة <small style="margin-right:auto;color:#999">9.8K</small></div>
+        <div class="sidebar-cat-item" onclick="filterByCategory('cat6')"><i class="fas fa-car"></i> السيارات <small style="margin-right:auto;color:#999">6.7K</small></div>
+        <div class="sidebar-cat-item" onclick="filterByCategory('cat7')"><i class="fas fa-futbol"></i> الرياضة واللياقة <small style="margin-right:auto;color:#999">11.2K</small></div>
+        <div class="sidebar-cat-item" onclick="filterByCategory('cat8')"><i class="fas fa-utensils"></i> الأغذية والمشروبات <small style="margin-right:auto;color:#999">7.4K</small></div>
+      </aside>
+
+      <!-- Slider -->
+      <div class="slider-container">
+        <div class="slide active" style="background: linear-gradient(135deg, #1a1a2e 0%, #16213e 60%, #0f3460 100%);">
+          <div class="slide-content">
+            <div class="slide-text">
+              <div class="slide-badge">🔥 أفضل العروض</div>
+              <h2>اكتشف ملايين<br>المنتجات بأسعار<br>الجملة</h2>
+              <p>تواصل مع أفضل الموردين حول العالم<br>واحصل على أسعار تنافسية</p>
+              <a href="products.html" class="slide-cta"><i class="fas fa-search"></i> تسوق الآن</a>
+            </div>
+            <div class="slide-img">🛒</div>
+          </div>
+        </div>
+        <div class="slide" style="background: linear-gradient(135deg, #0f3460 0%, #533483 100%);">
+          <div class="slide-content">
+            <div class="slide-text">
+              <div class="slide-badge">⚡ خصومات حتى 70%</div>
+              <h2>موسم<br>التخفيضات<br>الكبرى</h2>
+              <p>آلاف العروض على الإلكترونيات<br>والملابس والمنتجات المتنوعة</p>
+              <a href="products.html" class="slide-cta"><i class="fas fa-bolt"></i> عروض اليوم</a>
+            </div>
+            <div class="slide-img">📱</div>
+          </div>
+        </div>
+        <div class="slide" style="background: linear-gradient(135deg, #134e5e 0%, #71b280 100%);">
+          <div class="slide-content">
+            <div class="slide-text">
+              <div class="slide-badge">✅ موردون معتمدون</div>
+              <h2>ثق بأفضل<br>الموردين<br>المعتمدين</h2>
+              <p>أكثر من 5000 مورد معتمد<br>يضمنون جودة منتجاتهم</p>
+              <a href="products.html?filter=verified" class="slide-cta"><i class="fas fa-shield-alt"></i> تعرف عليهم</a>
+            </div>
+            <div class="slide-img">🏆</div>
+          </div>
+        </div>
+        <div class="slider-controls">
+          <button class="slider-dot active" onclick="goToSlide(0)"></button>
+          <button class="slider-dot" onclick="goToSlide(1)"></button>
+          <button class="slider-dot" onclick="goToSlide(2)"></button>
+        </div>
+        <button class="slider-prev" onclick="prevSlide()"><i class="fas fa-chevron-right"></i></button>
+        <button class="slider-next" onclick="nextSlide()"><i class="fas fa-chevron-left"></i></button>
+      </div>
+
+      <!-- Mini Banners -->
+      <div class="mini-banners">
+        <div class="mini-banner" style="background: linear-gradient(135deg, #FF6B35, #ff9f43);" onclick="window.location='products.html?filter=new'">
+          <span>🆕</span>
+          <h4>وصل حديثاً</h4>
+          <p>اكتشف أحدث المنتجات</p>
+        </div>
+        <div class="mini-banner" style="background: linear-gradient(135deg, #4ECDC4, #45B7D1);" onclick="window.location='products.html?filter=bulk'">
+          <span>📦</span>
+          <h4>طلبات الجملة</h4>
+          <p>أسعار خاصة للكميات الكبيرة</p>
+        </div>
+        <div class="mini-banner" style="background: linear-gradient(135deg, #5F27CD, #341f97);" onclick="window.location='seller.html'">
+          <span>🏪</span>
+          <h4>ابدأ البيع</h4>
+          <p>سجّل كبائع الآن</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- STATS BANNER -->
+<div class="stats-banner">
+  <div class="container">
+    <div class="stats-grid">
+      <div class="stat-item">
+        <h3>+5M</h3>
+        <p>منتج متاح</p>
+      </div>
+      <div class="stat-item">
+        <h3>+200K</h3>
+        <p>مورد موثوق</p>
+      </div>
+      <div class="stat-item">
+        <h3>+190</h3>
+        <p>دولة حول العالم</p>
+      </div>
+      <div class="stat-item">
+        <h3>+2M</h3>
+        <p>مستخدم نشط</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- CATEGORIES SECTION -->
+<section class="section" id="categories" style="background: white;">
+  <div class="container">
+    <div class="section-header">
+      <h2 class="section-title"><i class="fas fa-th-large"></i> تصفح حسب الفئة</h2>
+      <a href="products.html" class="see-all">عرض الكل <i class="fas fa-arrow-left"></i></a>
+    </div>
+    <div class="categories-grid" id="categoriesGrid">
+      <div class="loading-spinner"><div class="spinner"></div></div>
+    </div>
+  </div>
+</section>
+
+<!-- HOT PRODUCTS -->
+<section class="section">
+  <div class="container">
+    <div class="section-header">
+      <h2 class="section-title"><i class="fas fa-fire"></i> المنتجات الأكثر مبيعاً</h2>
+      <a href="products.html" class="see-all">عرض الكل <i class="fas fa-arrow-left"></i></a>
+    </div>
+    <div class="products-grid" id="hotProductsGrid">
+      <div class="loading-spinner"><div class="spinner"></div></div>
+    </div>
+  </div>
+</section>
+
+<!-- PROMO SECTION -->
+<section class="section" style="background: white;">
+  <div class="container">
+    <div class="promo-grid">
+      <div class="promo-card" style="background: linear-gradient(135deg, #FF6B35, #ff9f43);" onclick="window.location='products.html?filter=bulk'">
+        <div class="promo-tag">📦 طلبات الجملة</div>
+        <h3>خصومات تصل<br>إلى 50%</h3>
+        <p>على جميع طلبات الجملة فوق 1000 قطعة</p>
+        <div class="btn btn-outline" style="color:white; border-color:white; display:inline-flex;">تسوق الآن <i class="fas fa-arrow-left"></i></div>
+        <div class="promo-icon">📦</div>
+      </div>
+      <div class="promo-card" style="background: linear-gradient(135deg, #1a1a2e, #0f3460);" onclick="window.location='products.html?category=cat1'">
+        <div class="promo-tag">⚡ إلكترونيات</div>
+        <h3>أحدث التقنيات<br>بأسعار الجملة</h3>
+        <p>آلاف المنتجات الإلكترونية من أفضل الماركات</p>
+        <div class="btn btn-outline" style="color:white; border-color:white; display:inline-flex;">استكشف الآن <i class="fas fa-arrow-left"></i></div>
+        <div class="promo-icon">⚡</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SUPPLIERS SECTION -->
+<section class="section">
+  <div class="container">
+    <div class="section-header">
+      <h2 class="section-title"><i class="fas fa-handshake"></i> موردون مميزون</h2>
+      <a href="products.html?filter=verified" class="see-all">عرض الكل <i class="fas fa-arrow-left"></i></a>
+    </div>
+    <div class="suppliers-grid" id="suppliersGrid">
+      <div class="loading-spinner"><div class="spinner"></div></div>
+    </div>
+  </div>
+</section>
+
+<!-- NEW ARRIVALS -->
+<section class="section" style="background: white;">
+  <div class="container">
+    <div class="section-header">
+      <h2 class="section-title"><i class="fas fa-star"></i> وصل حديثاً</h2>
+      <a href="products.html?filter=new" class="see-all">عرض الكل <i class="fas fa-arrow-left"></i></a>
+    </div>
+    <div class="products-grid" id="newProductsGrid">
+      <div class="loading-spinner"><div class="spinner"></div></div>
+    </div>
+  </div>
+</section>
+
+<!-- TRUST BAR -->
+<div class="trust-bar">
+  <div class="container">
+    <div class="trust-grid">
+      <div class="trust-item">
+        <div class="trust-icon"><i class="fas fa-shield-alt"></i></div>
+        <div>
+          <h4>تجارة آمنة مضمونة</h4>
+          <p>حماية كاملة لمدفوعاتك وصفقاتك</p>
+        </div>
+      </div>
+      <div class="trust-item">
+        <div class="trust-icon"><i class="fas fa-globe"></i></div>
+        <div>
+          <h4>شحن عالمي</h4>
+          <p>إلى أكثر من 190 دولة حول العالم</p>
+        </div>
+      </div>
+      <div class="trust-item">
+        <div class="trust-icon"><i class="fas fa-headset"></i></div>
+        <div>
+          <h4>دعم 24/7</h4>
+          <p>فريق متخصص على مدار الساعة</p>
+        </div>
+      </div>
+      <div class="trust-item">
+        <div class="trust-icon"><i class="fas fa-certificate"></i></div>
+        <div>
+          <h4>موردون معتمدون</h4>
+          <p>أكثر من 5000 مورد تم التحقق منهم</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- FOOTER -->
+<footer>
+  <div class="container">
+    <div class="footer-grid">
+      <div class="footer-col">
+        <div class="logo" style="color:white; margin-bottom:14px;">
+          <div class="logo-icon"><i class="fas fa-globe-asia"></i></div>
+          Trade<span>Hub</span> Pro
+        </div>
+        <p>منصة التجارة الإلكترونية العالمية الرائدة التي تربط المشترين بالموردين من جميع أنحاء العالم. نوفر بيئة تجارية آمنة وموثوقة.</p>
+        <div class="footer-social">
+          <button class="social-btn"><i class="fab fa-facebook-f"></i></button>
+          <button class="social-btn"><i class="fab fa-twitter"></i></button>
+          <button class="social-btn"><i class="fab fa-linkedin-in"></i></button>
+          <button class="social-btn"><i class="fab fa-instagram"></i></button>
+          <button class="social-btn"><i class="fab fa-youtube"></i></button>
+        </div>
+      </div>
+      <div class="footer-col">
+        <h4>روابط سريعة</h4>
+        <ul class="footer-links">
+          <li><a href="index.html"><i class="fas fa-chevron-left"></i> الرئيسية</a></li>
+          <li><a href="products.html"><i class="fas fa-chevron-left"></i> المنتجات</a></li>
+          <li><a href="products.html?filter=verified"><i class="fas fa-chevron-left"></i> الموردون</a></li>
+          <li><a href="seller.html"><i class="fas fa-chevron-left"></i> بائع جديد</a></li>
+          <li><a href="cart.html"><i class="fas fa-chevron-left"></i> سلة التسوق</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>للمشترين</h4>
+        <ul class="footer-links">
+          <li><a href="#">كيفية الشراء</a></li>
+          <li><a href="#">طلب عروض أسعار</a></li>
+          <li><a href="#">حماية المشتري</a></li>
+          <li><a href="#">خيارات الدفع</a></li>
+          <li><a href="#">تتبع طلبك</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>للموردين</h4>
+        <ul class="footer-links">
+          <li><a href="seller.html">كيفية البيع</a></li>
+          <li><a href="#">حزم العضوية</a></li>
+          <li><a href="#">تسجيل الشركة</a></li>
+          <li><a href="#">إدارة المنتجات</a></li>
+          <li><a href="#">تقارير المبيعات</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>تواصل معنا</h4>
+        <ul class="footer-links">
+          <li><a href="#"><i class="fas fa-envelope"></i> info@tradehub.com</a></li>
+          <li><a href="#"><i class="fas fa-phone"></i> +966 12 345 6789</a></li>
+          <li><a href="#"><i class="fas fa-map-marker-alt"></i> الرياض، المملكة العربية السعودية</a></li>
+        </ul>
+        <div style="margin-top:16px;">
+          <p style="font-size:12px; margin-bottom:8px;">حمّل التطبيق</p>
+          <div style="display:flex; gap:8px; flex-direction:column;">
+            <a href="#" style="background:rgba(255,255,255,0.1); color:white; padding:8px 14px; border-radius:8px; font-size:12px; display:flex; align-items:center; gap:8px;"><i class="fab fa-apple"></i> App Store</a>
+            <a href="#" style="background:rgba(255,255,255,0.1); color:white; padding:8px 14px; border-radius:8px; font-size:12px; display:flex; align-items:center; gap:8px;"><i class="fab fa-google-play"></i> Google Play</a>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <span>© 2026 TradeHub Pro. جميع الحقوق محفوظة.</span>
+      <div class="payment-icons">
+        <span class="payment-icon">VISA</span>
+        <span class="payment-icon">MasterCard</span>
+        <span class="payment-icon">PayPal</span>
+        <span class="payment-icon">Apple Pay</span>
+        <span class="payment-icon">STC Pay</span>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<!-- Toast Container -->
+<div class="toast-container" id="toastContainer"></div>
+
+<script src="js/main.js"></script>
+<script src="js/home.js"></script>
+<!-- AI Assistant + PWA Manager -->
+<script src="js/countries.js"></script>
+<script src="js/whatsapp.js"></script>
+<script src="js/chatbot.js"></script>
+</body>
+</html>

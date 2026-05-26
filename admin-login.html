@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>دخول المدير - TradeHub Pro</title>
+  <!-- PWA -->
+  <meta name="theme-color" content="#f59e0b" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-title" content="TradeHub Pro" />
+  <link rel="manifest" href="manifest.json" />
+  <link rel="apple-touch-icon" href="icons/icon-192x192.png" />
+  <link rel="icon" type="image/svg+xml" href="icons/icon.svg" />
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" />
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    :root {
+      --primary: #FF6B35; --danger: #e74c3c; --success: #00b894;
+      --admin-dark: #0a0e1a; --admin-mid: #111827; --admin-card: #1a2235;
+      --admin-border: rgba(255,255,255,0.07); --admin-text: #e2e8f0;
+      --admin-muted: #64748b; --gold: #f59e0b;
+    }
+    body {
+      font-family: 'Cairo', sans-serif;
+      background: var(--admin-dark);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      overflow: hidden;
+    }
+    /* Animated background */
+    .bg-anim {
+      position: fixed; inset: 0; z-index: 0;
+      background: radial-gradient(ellipse at 20% 50%, rgba(255,107,53,0.08) 0%, transparent 60%),
+                  radial-gradient(ellipse at 80% 20%, rgba(245,158,11,0.06) 0%, transparent 50%),
+                  radial-gradient(ellipse at 60% 80%, rgba(99,102,241,0.06) 0%, transparent 50%);
+    }
+    .grid-lines {
+      position: fixed; inset: 0; z-index: 0;
+      background-image: linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px),
+                        linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px);
+      background-size: 50px 50px;
+    }
+    .floating-orb {
+      position: fixed; border-radius: 50%; filter: blur(80px); z-index: 0; animation: floatOrb 8s ease-in-out infinite;
+    }
+    .orb1 { width: 400px; height: 400px; background: rgba(255,107,53,0.06); top: -100px; right: -100px; animation-delay: 0s; }
+    .orb2 { width: 300px; height: 300px; background: rgba(245,158,11,0.05); bottom: -80px; left: -80px; animation-delay: 3s; }
+    @keyframes floatOrb { 0%,100% { transform: translate(0,0) scale(1); } 50% { transform: translate(30px, -30px) scale(1.1); } }
+
+    /* Login Card */
+    .login-wrapper { position: relative; z-index: 10; width: 100%; max-width: 460px; padding: 20px; }
+    .login-card {
+      background: rgba(26, 34, 53, 0.85);
+      border: 1px solid var(--admin-border);
+      border-radius: 24px;
+      padding: 48px 40px;
+      backdrop-filter: blur(20px);
+      box-shadow: 0 25px 80px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.04);
+    }
+    .login-logo {
+      text-align: center;
+      margin-bottom: 32px;
+    }
+    .logo-shield {
+      width: 80px; height: 80px;
+      background: linear-gradient(135deg, #FF6B35, #f59e0b);
+      border-radius: 20px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 36px; color: white;
+      margin: 0 auto 16px;
+      box-shadow: 0 8px 32px rgba(255,107,53,0.3);
+      animation: pulseLogo 3s ease-in-out infinite;
+    }
+    @keyframes pulseLogo { 0%,100% { box-shadow: 0 8px 32px rgba(255,107,53,0.3); } 50% { box-shadow: 0 8px 48px rgba(255,107,53,0.5); } }
+    .login-logo h1 { font-size: 22px; font-weight: 800; color: white; margin-bottom: 4px; }
+    .login-logo p { font-size: 13px; color: var(--admin-muted); }
+    .admin-badge {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: rgba(245,158,11,0.12); color: var(--gold);
+      padding: 4px 14px; border-radius: 20px; font-size: 12px; font-weight: 700;
+      border: 1px solid rgba(245,158,11,0.2); margin-top: 8px;
+    }
+    .form-group { margin-bottom: 18px; }
+    .form-label { display: block; font-size: 12px; font-weight: 700; color: var(--admin-muted); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px; }
+    .input-wrap { position: relative; }
+    .input-icon { position: absolute; top: 50%; transform: translateY(-50%); right: 14px; color: var(--admin-muted); font-size: 14px; pointer-events: none; }
+    .form-input {
+      width: 100%; padding: 13px 42px 13px 14px;
+      background: rgba(255,255,255,0.04);
+      border: 1.5px solid var(--admin-border);
+      border-radius: 10px; color: var(--admin-text);
+      font-size: 14px; font-family: 'Cairo', sans-serif;
+      outline: none; transition: all 0.3s;
+    }
+    .form-input:focus { border-color: var(--primary); background: rgba(255,107,53,0.05); box-shadow: 0 0 0 3px rgba(255,107,53,0.1); }
+    .form-input::placeholder { color: var(--admin-muted); }
+    .toggle-pass { position: absolute; top: 50%; transform: translateY(-50%); left: 14px; background: none; border: none; color: var(--admin-muted); cursor: pointer; font-size: 14px; transition: color 0.2s; }
+    .toggle-pass:hover { color: var(--primary); }
+    .login-btn {
+      width: 100%; padding: 14px;
+      background: linear-gradient(135deg, #FF6B35, #f59e0b);
+      color: white; border: none; border-radius: 12px;
+      font-size: 16px; font-weight: 700; font-family: 'Cairo', sans-serif;
+      cursor: pointer; transition: all 0.3s; position: relative; overflow: hidden;
+      margin-top: 8px;
+    }
+    .login-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(255,107,53,0.4); }
+    .login-btn:active { transform: translateY(0); }
+    .login-btn .btn-content { display: flex; align-items: center; justify-content: center; gap: 10px; position: relative; z-index: 1; }
+    .login-btn .ripple { position: absolute; border-radius: 50%; background: rgba(255,255,255,0.3); transform: scale(0); animation: ripple 0.6s linear; }
+    @keyframes ripple { to { transform: scale(4); opacity: 0; } }
+    .security-note {
+      display: flex; align-items: center; gap: 8px;
+      font-size: 12px; color: var(--admin-muted); text-align: center;
+      margin-top: 20px; padding: 12px; border-radius: 8px;
+      background: rgba(255,255,255,0.02); border: 1px solid var(--admin-border);
+    }
+    .security-note i { color: var(--success); font-size: 14px; }
+    .error-msg { display: none; background: rgba(231,76,60,0.1); border: 1px solid rgba(231,76,60,0.3); color: #fc8181; padding: 10px 14px; border-radius: 8px; font-size: 13px; margin-bottom: 16px; align-items: center; gap: 8px; }
+    .error-msg.show { display: flex; animation: shake 0.3s ease; }
+    @keyframes shake { 0%,100% { transform: translateX(0); } 25% { transform: translateX(-8px); } 75% { transform: translateX(8px); } }
+    .hint-box {
+      margin-top: 20px; padding: 14px 16px;
+      background: rgba(255,107,53,0.06); border: 1px solid rgba(255,107,53,0.15);
+      border-radius: 10px; font-size: 12px; color: var(--admin-muted);
+    }
+    .hint-box strong { color: var(--primary); }
+    .hint-row { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
+    .hint-row:last-child { margin-bottom: 0; }
+    .back-link { display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 24px; color: var(--admin-muted); font-size: 13px; text-decoration: none; transition: color 0.2s; }
+    .back-link:hover { color: var(--primary); }
+    /* Loading state */
+    .loading { display: none; }
+    .loading-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: white; margin: 0 3px; animation: loadingDot 1s infinite; }
+    .loading-dot:nth-child(2) { animation-delay: 0.2s; }
+    .loading-dot:nth-child(3) { animation-delay: 0.4s; }
+    @keyframes loadingDot { 0%,80%,100% { transform: scale(0.6); opacity: 0.5; } 40% { transform: scale(1); opacity: 1; } }
+  </style>
+</head>
+<body>
+  <div class="bg-anim"></div>
+  <div class="grid-lines"></div>
+  <div class="floating-orb orb1"></div>
+  <div class="floating-orb orb2"></div>
+
+  <div class="login-wrapper">
+    <div class="login-card">
+      <div class="login-logo">
+        <div class="logo-shield"><i class="fas fa-shield-alt"></i></div>
+        <h1>TradeHub Pro</h1>
+        <p>نظام إدارة المنصة</p>
+        <div class="admin-badge"><i class="fas fa-crown"></i> بوابة المدير العام</div>
+      </div>
+
+      <div class="error-msg" id="errorMsg">
+        <i class="fas fa-exclamation-triangle"></i>
+        <span id="errorText">بيانات الدخول غير صحيحة</span>
+      </div>
+
+      <form onsubmit="return doLogin(event)">
+        <div class="form-group">
+          <label class="form-label">اسم المستخدم / البريد الإلكتروني</label>
+          <div class="input-wrap">
+            <i class="fas fa-user input-icon"></i>
+            <input type="text" class="form-input" id="adminUser" placeholder="admin@tradehub.com" autocomplete="username" />
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">كلمة المرور</label>
+          <div class="input-wrap">
+            <i class="fas fa-lock input-icon"></i>
+            <input type="password" class="form-input" id="adminPass" placeholder="••••••••••" autocomplete="current-password" />
+            <button type="button" class="toggle-pass" onclick="togglePass()"><i class="fas fa-eye" id="eyeIcon"></i></button>
+          </div>
+        </div>
+
+        <button type="submit" class="login-btn" id="loginBtn">
+          <div class="btn-content" id="btnContent">
+            <i class="fas fa-sign-in-alt"></i> دخول لوحة التحكم
+          </div>
+          <div class="loading" id="btnLoading">
+            <span class="loading-dot"></span>
+            <span class="loading-dot"></span>
+            <span class="loading-dot"></span>
+          </div>
+        </button>
+      </form>
+
+      <div class="security-note">
+        <i class="fas fa-lock"></i>
+        <span>هذه الصفحة محمية بتشفير SSL. يتم تسجيل جميع محاولات الدخول.</span>
+      </div>
+
+    </div>
+
+    <a href="index.html" class="back-link">
+      <i class="fas fa-arrow-right"></i> العودة إلى الموقع الرئيسي
+    </a>
+  </div>
+
+  <script>
+    const ADMIN_CREDENTIALS = { user: 'admin', pass: 'admin123', email: 'admin@tradehub.com' };
+
+    function togglePass() {
+      const inp = document.getElementById('adminPass');
+      const icon = document.getElementById('eyeIcon');
+      inp.type = inp.type === 'password' ? 'text' : 'password';
+      icon.className = inp.type === 'password' ? 'fas fa-eye' : 'fas fa-eye-slash';
+    }
+
+    function showError(msg) {
+      const el = document.getElementById('errorMsg');
+      document.getElementById('errorText').textContent = msg;
+      el.classList.add('show');
+      setTimeout(() => el.classList.remove('show'), 4000);
+    }
+
+    function setLoading(loading) {
+      document.getElementById('btnContent').style.display = loading ? 'none' : 'flex';
+      const loadEl = document.getElementById('btnLoading');
+      loadEl.style.display = loading ? 'flex' : 'none';
+      loadEl.style.justifyContent = 'center';
+      loadEl.style.alignItems = 'center';
+      document.getElementById('loginBtn').disabled = loading;
+    }
+
+    function doLogin(e) {
+      e.preventDefault();
+      const user = document.getElementById('adminUser').value.trim();
+      const pass = document.getElementById('adminPass').value;
+
+      if (!user || !pass) { showError('يرجى إدخال اسم المستخدم وكلمة المرور'); return false; }
+
+      setLoading(true);
+      setTimeout(() => {
+        const isValid = (user === ADMIN_CREDENTIALS.user || user === ADMIN_CREDENTIALS.email) && pass === ADMIN_CREDENTIALS.pass;
+        if (isValid) {
+          localStorage.setItem('tradehub_admin', JSON.stringify({ name: 'المدير العام', email: 'admin@tradehub.com', role: 'super_admin', loginTime: Date.now() }));
+          window.location.href = 'admin.html';
+        } else {
+          setLoading(false);
+          showError('اسم المستخدم أو كلمة المرور غير صحيحة');
+          document.getElementById('adminPass').value = '';
+        }
+      }, 1200);
+      return false;
+    }
+
+    // Check if already logged in
+    const stored = localStorage.getItem('tradehub_admin');
+    if (stored) {
+      try {
+        const data = JSON.parse(stored);
+        if (Date.now() - data.loginTime < 24 * 60 * 60 * 1000) window.location.href = 'admin.html';
+      } catch(e) { localStorage.removeItem('tradehub_admin'); }
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>سلة التسوق - TradeHub Pro</title>
+  <!-- PWA -->
+  <meta name="theme-color" content="#f59e0b" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-title" content="TradeHub Pro" />
+  <link rel="manifest" href="manifest.json" />
+  <link rel="apple-touch-icon" href="icons/icon-192x192.png" />
+  <link rel="icon" type="image/svg+xml" href="icons/icon.svg" />
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" />
+  <link rel="stylesheet" href="css/style.css" />
+  <!-- Auth Guard: runs before page renders -->
+  <script src="js/auth.js"></script>
+  <script>
+    // ── Auth Guard for Cart Page ─────────────────
+    // Cart requires login (buyers and sellers)
+    (function authGuard() {
+      const session = typeof getSession === 'function' ? getSession() : null;
+      if (!session) {
+        window.location.replace('auth.html?mode=login&next=cart.html');
+        document.documentElement.style.visibility = 'hidden';
+        return;
+      }
+      const now = Math.floor(Date.now() / 1000);
+      if (session.exp && session.exp < now) {
+        localStorage.removeItem('tradehub_token');
+        window.location.replace('auth.html?mode=login&expired=1&next=cart.html');
+        document.documentElement.style.visibility = 'hidden';
+        return;
+      }
+      document.documentElement.style.visibility = 'visible';
+    })();
+  </script>
+  <style>
+    .cart-page { padding: 24px 0 60px; }
+    .cart-layout { display: grid; grid-template-columns: 1fr 360px; gap: 24px; align-items: start; }
+
+    /* Cart Table */
+    .cart-table-wrap { background: white; border: 1px solid var(--border); border-radius: var(--radius-md); overflow: hidden; }
+    .cart-table-header { padding: 16px 20px; background: var(--secondary); color: white; display: flex; align-items: center; justify-content: space-between; }
+    .cart-table-header h3 { font-size: 15px; font-weight: 700; }
+    .cart-item { display: grid; grid-template-columns: 80px 1fr auto auto auto; gap: 16px; align-items: center; padding: 16px 20px; border-bottom: 1px solid var(--border); transition: var(--transition); }
+    .cart-item:hover { background: var(--bg-light); }
+    .cart-item:last-child { border-bottom: none; }
+    .cart-item-img { width: 80px; height: 80px; border-radius: var(--radius-sm); object-fit: cover; border: 1px solid var(--border); }
+    .cart-item-info { min-width: 0; }
+    .cart-item-name { font-size: 14px; font-weight: 600; margin-bottom: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .cart-item-supplier { font-size: 12px; color: var(--text-light); margin-bottom: 4px; }
+    .cart-item-price { font-size: 16px; font-weight: 800; color: var(--primary); text-align: center; }
+    .cart-item-price small { display: block; font-size: 11px; color: var(--text-light); font-weight: 400; }
+    .qty-controls { display: flex; align-items: center; gap: 6px; }
+    .qty-ctrl-btn { width: 28px; height: 28px; border: 1.5px solid var(--border); border-radius: 4px; background: white; cursor: pointer; font-size: 16px; display: flex; align-items: center; justify-content: center; transition: var(--transition); }
+    .qty-ctrl-btn:hover { border-color: var(--primary); color: var(--primary); }
+    .qty-ctrl-val { width: 48px; text-align: center; padding: 4px; border: 1.5px solid var(--border); border-radius: 4px; font-size: 14px; font-weight: 700; outline: none; }
+    .cart-item-total { font-size: 15px; font-weight: 800; color: var(--secondary); min-width: 80px; text-align: center; }
+    .remove-btn { background: none; border: none; color: var(--text-light); cursor: pointer; font-size: 18px; transition: var(--transition); padding: 4px; }
+    .remove-btn:hover { color: var(--danger); }
+
+    /* Summary Box */
+    .cart-summary { background: white; border: 1px solid var(--border); border-radius: var(--radius-md); overflow: hidden; position: sticky; top: 80px; }
+    .summary-header { padding: 16px 20px; background: var(--secondary); color: white; }
+    .summary-header h3 { font-size: 15px; font-weight: 700; }
+    .summary-body { padding: 20px; }
+    .summary-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--border); font-size: 14px; }
+    .summary-row:last-of-type { border-bottom: none; }
+    .summary-row.total { font-size: 18px; font-weight: 800; color: var(--secondary); padding-top: 16px; border-top: 2px solid var(--border); }
+    .summary-row.total span:last-child { color: var(--primary); }
+    .coupon-row { display: flex; gap: 8px; margin: 12px 0; }
+    .coupon-input { flex: 1; padding: 8px 12px; border: 1.5px solid var(--border); border-radius: var(--radius-sm); font-size: 13px; outline: none; }
+    .coupon-input:focus { border-color: var(--primary); }
+    .coupon-btn { padding: 8px 16px; background: var(--secondary); color: white; border: none; border-radius: var(--radius-sm); font-size: 13px; cursor: pointer; transition: var(--transition); font-weight: 600; }
+    .coupon-btn:hover { background: var(--primary); }
+    .checkout-btn { width: 100%; padding: 16px; background: var(--primary); color: white; border: none; border-radius: var(--radius-md); font-size: 16px; font-weight: 700; cursor: pointer; transition: var(--transition); margin-top: 16px; display: flex; align-items: center; justify-content: center; gap: 8px; }
+    .checkout-btn:hover { background: var(--primary-dark); transform: translateY(-1px); }
+    .secure-icons { display: flex; align-items: center; justify-content: center; gap: 12px; margin-top: 12px; font-size: 12px; color: var(--text-light); }
+
+    /* Steps */
+    .checkout-steps { display: flex; align-items: center; justify-content: center; gap: 0; margin-bottom: 24px; }
+    .step { display: flex; align-items: center; gap: 8px; }
+    .step-num { width: 32px; height: 32px; border-radius: 50%; background: var(--border); color: var(--text-light); display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; }
+    .step.active .step-num { background: var(--primary); color: white; }
+    .step.done .step-num { background: var(--success); color: white; }
+    .step-label { font-size: 13px; color: var(--text-mid); font-weight: 600; }
+    .step.active .step-label { color: var(--primary); }
+    .step-line { width: 60px; height: 2px; background: var(--border); margin: 0 8px; }
+
+    .cart-empty { text-align: center; padding: 60px 20px; }
+    .cart-empty i { font-size: 80px; color: var(--border); margin-bottom: 16px; }
+    .cart-empty h3 { font-size: 22px; color: var(--text-mid); margin-bottom: 8px; }
+    .cart-empty p { color: var(--text-light); margin-bottom: 20px; }
+
+    @media (max-width: 900px) { .cart-layout { grid-template-columns: 1fr; } .cart-summary { position: static; } .cart-item { grid-template-columns: 60px 1fr; row-gap: 8px; } .cart-item-price, .qty-controls, .cart-item-total { grid-column: 2; } }
+  </style>
+</head>
+<body>
+
+<div class="top-bar">
+  <div class="container">
+    <div class="top-bar-links">
+      <a href="index.html"><i class="fas fa-home"></i> الرئيسية</a>
+    </div>
+    <div class="top-bar-links">
+      <a href="auth.html"><i class="fas fa-sign-in-alt"></i> تسجيل الدخول</a>
+    </div>
+  </div>
+</div>
+
+<header>
+  <div class="container header-main">
+    <a href="index.html" class="logo">
+      <span class="logo-dynamic">
+        <div class="logo-icon"><i class="fas fa-globe-asia"></i></div>
+        Trade<span>Hub</span>
+      </span>
+    </a>
+    <div class="search-bar">
+      <input type="text" class="search-input" id="searchInput" placeholder="ابحث عن منتجات..." />
+      <select class="search-select" id="searchCategory"><option value="">جميع الفئات</option></select>
+      <button class="search-btn" onclick="doSearch()"><i class="fas fa-search"></i></button>
+    </div>
+    <div class="header-actions">
+      <button class="header-btn" style="color:var(--primary)">
+        <i class="fas fa-shopping-cart"></i><span>السلة</span>
+        <span class="badge" id="cartCount">0</span>
+      </button>
+      <button class="header-btn" onclick="window.location='auth.html'">
+        <i class="fas fa-user-circle"></i><span>حسابي</span>
+      </button>
+    </div>
+  </div>
+</header>
+
+<nav>
+  <div class="container">
+    <div class="nav-inner">
+      <a href="index.html#categories" class="nav-link all-categories-btn"><i class="fas fa-th"></i> جميع الفئات</a>
+      <a href="products.html" class="nav-link"><i class="fas fa-fire"></i> المنتجات</a>
+      <a href="cart.html" class="nav-link active"><i class="fas fa-shopping-cart"></i> السلة</a>
+      <a href="seller.html" class="nav-link"><i class="fas fa-chart-line"></i> لوحة البائع</a>
+    </div>
+  </div>
+</nav>
+
+<div class="container cart-page">
+  <!-- Breadcrumb -->
+  <nav class="breadcrumb">
+    <a href="index.html">الرئيسية</a>
+    <span><i class="fas fa-chevron-left"></i></span>
+    <span>سلة التسوق</span>
+  </nav>
+
+  <!-- Steps -->
+  <div class="checkout-steps">
+    <div class="step active">
+      <div class="step-num">1</div>
+      <span class="step-label">السلة</span>
+    </div>
+    <div class="step-line"></div>
+    <div class="step">
+      <div class="step-num">2</div>
+      <span class="step-label">التسليم</span>
+    </div>
+    <div class="step-line"></div>
+    <div class="step">
+      <div class="step-num">3</div>
+      <span class="step-label">الدفع</span>
+    </div>
+    <div class="step-line"></div>
+    <div class="step">
+      <div class="step-num">4</div>
+      <span class="step-label">التأكيد</span>
+    </div>
+  </div>
+
+  <div class="cart-layout">
+    <!-- Cart Items -->
+    <div>
+      <div class="cart-table-wrap">
+        <div class="cart-table-header">
+          <h3><i class="fas fa-shopping-cart"></i> سلة التسوق (<span id="itemCount">0</span> منتج)</h3>
+          <button onclick="clearCart()" style="background:none;border:none;color:rgba(255,255,255,0.6);cursor:pointer;font-size:13px"><i class="fas fa-trash"></i> إفراغ السلة</button>
+        </div>
+        <div id="cartItems">
+          <div class="loading-spinner"><div class="spinner"></div></div>
+        </div>
+      </div>
+
+      <!-- Suggestions -->
+      <div style="margin-top:24px">
+        <div class="section-header">
+          <h2 class="section-title"><i class="fas fa-lightbulb"></i> قد يعجبك أيضاً</h2>
+          <a href="products.html" class="see-all">عرض الكل <i class="fas fa-arrow-left"></i></a>
+        </div>
+        <div class="products-grid" id="suggestedGrid">
+          <div class="loading-spinner" style="grid-column:1/-1"><div class="spinner"></div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Summary -->
+    <aside class="cart-summary">
+      <div class="summary-header">
+        <h3><i class="fas fa-receipt"></i> ملخص الطلب</h3>
+      </div>
+      <div class="summary-body">
+        <div class="summary-row">
+          <span>المجموع الفرعي</span>
+          <span id="subtotal">$0.00</span>
+        </div>
+        <div class="summary-row">
+          <span>الشحن التقديري</span>
+          <span id="shipping">$0.00</span>
+        </div>
+        <div class="summary-row" style="color:var(--success)">
+          <span><i class="fas fa-tag"></i> التوفير</span>
+          <span id="savings">$0.00</span>
+        </div>
+        <div class="coupon-row">
+          <input type="text" class="coupon-input" placeholder="كود الخصم" id="couponInput" />
+          <button class="coupon-btn" onclick="applyCoupon()">تطبيق</button>
+        </div>
+        <div class="summary-row total">
+          <span>الإجمالي</span>
+          <span id="total">$0.00</span>
+        </div>
+        <button class="checkout-btn" onclick="checkout()">
+          <i class="fas fa-lock"></i> إتمام الطلب
+        </button>
+        <div class="secure-icons">
+          <i class="fas fa-shield-alt"></i>
+          <span>دفع آمن</span>
+          <span>|</span>
+          <i class="fas fa-lock"></i>
+          <span>مشفر SSL</span>
+        </div>
+        <div style="margin-top:16px;padding-top:16px;border-top:1px solid var(--border)">
+          <p style="font-size:12px;color:var(--text-light);text-align:center;margin-bottom:10px">نقبل</p>
+          <div style="display:flex;justify-content:center;gap:8px;flex-wrap:wrap">
+            <span class="payment-icon" style="background:var(--bg-light);color:var(--text-mid)">VISA</span>
+            <span class="payment-icon" style="background:var(--bg-light);color:var(--text-mid)">MasterCard</span>
+            <span class="payment-icon" style="background:var(--bg-light);color:var(--text-mid)">PayPal</span>
+            <span class="payment-icon" style="background:var(--bg-light);color:var(--text-mid)">STC Pay</span>
+          </div>
+        </div>
+      </div>
+    </aside>
+  </div>
+</div>
+
+<div class="toast-container" id="toastContainer"></div>
+
+<script src="js/main.js"></script>
+<script>
+  // Show logged-in user name in cart header if element exists
+  (function populateCartUser() {
+    const session = typeof getSession === 'function' ? getSession() : null;
+    if (!session) return;
+    const welcomeEl = document.getElementById('cartWelcomeUser');
+    if (welcomeEl) welcomeEl.textContent = session.name || '';
+  })();
+</script>
+<script>
+let cartData = [];
+
+async function loadCart() {
+  try {
+    const items = await Cart.getItems();
+    cartData = items;
+    renderCart(items);
+    updateSummary(items);
+    loadSuggestions();
+  } catch {
+    document.getElementById('cartItems').innerHTML = '<p style="text-align:center;padding:20px;color:var(--text-light)">تعذر تحميل السلة</p>';
+  }
+}
+
+function renderCart(items) {
+  const container = document.getElementById('cartItems');
+  document.getElementById('itemCount').textContent = items.length;
+  Cart.updateBadge();
+
+  if (!items.length) {
+    container.innerHTML = `
+      <div class="cart-empty">
+        <i class="fas fa-shopping-cart"></i>
+        <h3>سلة التسوق فارغة</h3>
+        <p>لم تقم بإضافة أي منتجات بعد</p>
+        <a href="products.html" class="btn btn-primary"><i class="fas fa-shopping-bag"></i> تسوق الآن</a>
+      </div>`;
+    return;
+  }
+
+  container.innerHTML = items.map(item => `
+    <div class="cart-item" id="cart-${item.id}">
+      <img src="${item.image_url || 'https://placehold.co/80x80/eee/999?text=P'}" class="cart-item-img" alt="${item.product_name}" />
+      <div class="cart-item-info">
+        <div class="cart-item-name">${item.product_name || 'منتج'}</div>
+        <div class="cart-item-supplier"><i class="fas fa-store"></i> ${item.supplier || 'مورد'}</div>
+        <div style="font-size:11px;color:var(--success)"><i class="fas fa-check-circle"></i> متوفر في المخزون</div>
+      </div>
+      <div class="cart-item-price">
+        $${parseFloat(item.price || 0).toFixed(2)}
+        <small>/ قطعة</small>
+      </div>
+      <div class="qty-controls">
+        <button class="qty-ctrl-btn" onclick="updateItemQty('${item.id}', -1)">−</button>
+        <input type="number" class="qty-ctrl-val" value="${item.quantity || 1}" min="1" onchange="setItemQty('${item.id}', this.value)" />
+        <button class="qty-ctrl-btn" onclick="updateItemQty('${item.id}', 1)">+</button>
+      </div>
+      <div class="cart-item-total">$${(parseFloat(item.price || 0) * (item.quantity || 1)).toFixed(2)}</div>
+      <button class="remove-btn" onclick="removeFromCart('${item.id}')" title="حذف"><i class="fas fa-times"></i></button>
+    </div>`).join('');
+}
+
+function updateSummary(items) {
+  const subtotal = items.reduce((s, i) => s + (parseFloat(i.price || 0) * (i.quantity || 1)), 0);
+  const shipping = subtotal > 0 ? (subtotal > 500 ? 0 : 25) : 0;
+  const savings = subtotal * 0.05;
+  const total = subtotal + shipping - savings;
+
+  document.getElementById('subtotal').textContent = `$${subtotal.toFixed(2)}`;
+  document.getElementById('shipping').textContent = shipping === 0 ? 'مجاناً 🎉' : `$${shipping.toFixed(2)}`;
+  document.getElementById('savings').textContent = `-$${savings.toFixed(2)}`;
+  document.getElementById('total').textContent = `$${total.toFixed(2)}`;
+}
+
+async function updateItemQty(id, delta) {
+  const item = cartData.find(i => i.id === id);
+  if (!item) return;
+  const newQty = Math.max(1, (item.quantity || 1) + delta);
+  await fetch(`tables/cart/${id}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ quantity: newQty })
+  });
+  await loadCart();
+}
+
+async function setItemQty(id, val) {
+  const qty = Math.max(1, parseInt(val) || 1);
+  await fetch(`tables/cart/${id}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ quantity: qty })
+  });
+  await loadCart();
+}
+
+async function removeFromCart(id) {
+  await Cart.removeItem(id);
+  showToast('تم إزالة المنتج من السلة', 'info');
+  await loadCart();
+}
+
+async function clearCart() {
+  if (!confirm('هل أنت متأكد من إفراغ السلة؟')) return;
+  for (const item of cartData) {
+    await Cart.removeItem(item.id);
+  }
+  showToast('تم إفراغ السلة', 'info');
+  await loadCart();
+}
+
+function applyCoupon() {
+  const code = document.getElementById('couponInput').value.trim().toUpperCase();
+  if (code === 'TRADE10') {
+    showToast('تم تطبيق كود الخصم: خصم 10% ✅', 'success');
+  } else if (code) {
+    showToast('كود الخصم غير صحيح أو منتهي الصلاحية', 'error');
+  }
+}
+
+function checkout() {
+  if (!cartData.length) {
+    showToast('السلة فارغة! أضف منتجات أولاً', 'error');
+    return;
+  }
+  showToast('جارٍ تحويلك لصفحة إتمام الطلب... ✅', 'success');
+  setTimeout(() => {
+    window.location.href = 'checkout.html';
+  }, 800);
+}
+
+async function loadSuggestions() {
+  try {
+    const res = await fetch('tables/products?limit=4');
+    const data = await res.json();
+    const products = data.data || [];
+    products.forEach(p => productsCache[p.id] = p);
+    document.getElementById('suggestedGrid').innerHTML = products.slice(0, 4).map(buildProductCard).join('');
+  } catch {
+    document.getElementById('suggestedGrid').innerHTML = '';
+  }
+}
+
+loadCart();
+</script>
+<!-- AI Assistant + PWA Manager -->
+<script src="js/countries.js"></script>
+<script src="js/whatsapp.js"></script>
+<script src="js/chatbot.js"></script>
+</body>
+</html>

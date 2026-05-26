@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>المنتجات - TradeHub Pro</title>
+  <!-- PWA -->
+  <meta name="theme-color" content="#f59e0b" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-title" content="TradeHub Pro" />
+  <link rel="manifest" href="manifest.json" />
+  <link rel="apple-touch-icon" href="icons/icon-192x192.png" />
+  <link rel="icon" type="image/svg+xml" href="icons/icon.svg" />
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" />
+  <link rel="stylesheet" href="css/style.css" />
+  <script src="js/auth.js"></script>
+  <style>
+    .page-layout { display: grid; grid-template-columns: 260px 1fr; gap: 20px; padding: 24px 0 40px; }
+    /* Filters Sidebar */
+    .filters-sidebar { background: white; border: 1px solid var(--border); border-radius: var(--radius-md); height: fit-content; position: sticky; top: 80px; }
+    .filter-header { padding: 16px 20px; background: var(--secondary); color: white; border-radius: var(--radius-md) var(--radius-md) 0 0; display:flex; align-items:center; justify-content:space-between; }
+    .filter-header h3 { font-size:15px; font-weight:700; }
+    .filter-reset { background:none; border:none; color:rgba(255,255,255,0.6); font-size:13px; cursor:pointer; }
+    .filter-reset:hover { color:var(--primary); }
+    .filter-section { padding: 16px 20px; border-bottom: 1px solid var(--border); }
+    .filter-section:last-child { border-bottom: none; }
+    .filter-section h4 { font-size:13px; font-weight:700; color:var(--text-dark); margin-bottom:12px; display:flex; align-items:center; justify-content:space-between; cursor:pointer; }
+    .filter-option { display:flex; align-items:center; gap:8px; padding:5px 0; cursor:pointer; font-size:13px; color:var(--text-mid); }
+    .filter-option input[type=checkbox] { accent-color: var(--primary); width:15px; height:15px; }
+    .filter-option:hover { color:var(--primary); }
+    .price-range { display:flex; align-items:center; gap:8px; margin-top:8px; }
+    .price-input { width:80px; padding:6px 8px; border:1.5px solid var(--border); border-radius:var(--radius-sm); font-size:13px; text-align:center; outline:none; }
+    .price-input:focus { border-color:var(--primary); }
+    /* Products Area */
+    .products-area {}
+    .products-toolbar { display:flex; align-items:center; justify-content:space-between; background:white; padding:12px 16px; border-radius:var(--radius-md); margin-bottom:16px; border:1px solid var(--border); gap:12px; flex-wrap:wrap; }
+    .toolbar-left { display:flex; align-items:center; gap:12px; }
+    .toolbar-right { display:flex; align-items:center; gap:10px; }
+    .results-count { font-size:14px; color:var(--text-mid); }
+    .results-count strong { color:var(--primary); }
+    .sort-select { padding:8px 12px; border:1.5px solid var(--border); border-radius:var(--radius-sm); font-size:13px; outline:none; cursor:pointer; background:white; }
+    .sort-select:focus { border-color:var(--primary); }
+    .view-btn { padding:8px 10px; border:1.5px solid var(--border); border-radius:var(--radius-sm); background:white; cursor:pointer; transition:var(--transition); color:var(--text-mid); }
+    .view-btn.active { border-color:var(--primary); color:var(--primary); background:var(--primary-light); }
+    .products-grid.list-view { grid-template-columns: 1fr !important; }
+    .products-grid.list-view .product-card { display:flex; }
+    .products-grid.list-view .product-img-wrap { width:200px; flex-shrink:0; height:auto; }
+    /* Breadcrumb */
+    .breadcrumb { padding: 12px 0; display:flex; align-items:center; gap:6px; font-size:13px; color:var(--text-light); }
+    .breadcrumb a { color:var(--text-mid); transition:var(--transition); }
+    .breadcrumb a:hover { color:var(--primary); }
+    .breadcrumb span { color:var(--text-light); }
+    /* Active Filters */
+    .active-filters { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:12px; }
+    .filter-tag { display:flex; align-items:center; gap:6px; background:var(--primary-light); color:var(--primary); padding:4px 12px; border-radius:20px; font-size:12px; font-weight:600; border:1.5px solid rgba(255,107,53,0.2); }
+    .filter-tag button { background:none; border:none; cursor:pointer; color:var(--primary); font-size:14px; padding:0; line-height:1; }
+    /* Pagination */
+    .pagination { display:flex; align-items:center; justify-content:center; gap:6px; margin-top:32px; }
+    .page-btn { width:36px; height:36px; border-radius:var(--radius-sm); border:1.5px solid var(--border); background:white; cursor:pointer; font-size:13px; transition:var(--transition); display:flex; align-items:center; justify-content:center; color:var(--text-mid); }
+    .page-btn:hover { border-color:var(--primary); color:var(--primary); }
+    .page-btn.active { background:var(--primary); border-color:var(--primary); color:white; font-weight:700; }
+    .page-btn:disabled { opacity:0.4; cursor:not-allowed; }
+    /* Category tabs */
+    .cat-tabs { display:flex; gap:8px; overflow-x:auto; margin-bottom:16px; padding-bottom:4px; }
+    .cat-tab { padding:8px 18px; border-radius:20px; border:1.5px solid var(--border); background:white; font-size:13px; font-weight:600; cursor:pointer; white-space:nowrap; transition:var(--transition); color:var(--text-mid); }
+    .cat-tab:hover { border-color:var(--primary); color:var(--primary); }
+    .cat-tab.active { background:var(--primary); border-color:var(--primary); color:white; }
+    @media (max-width:900px) { .page-layout { grid-template-columns: 1fr; } .filters-sidebar { display:none; } }
+  </style>
+</head>
+<body>
+
+<!-- TOP BAR -->
+<div class="top-bar">
+  <div class="container">
+    <div class="top-bar-links">
+      <a href="index.html"><i class="fas fa-home"></i> الرئيسية</a>
+      <span>|</span>
+      <a href="#">المملكة العربية السعودية</a>
+    </div>
+    <div class="top-bar-links">
+      <a href="auth.html"><i class="fas fa-sign-in-alt"></i> تسجيل الدخول</a>
+      <span>|</span>
+      <a href="auth.html?mode=register">إنشاء حساب</a>
+      <span>|</span>
+      <a href="seller.html"><i class="fas fa-store"></i> بيع على TradeHub</a>
+    </div>
+  </div>
+</div>
+
+<!-- HEADER -->
+<header>
+  <div class="container header-main">
+    <a href="index.html" class="logo">
+      <span class="logo-dynamic">
+        <div class="logo-icon"><i class="fas fa-globe-asia"></i></div>
+        Trade<span>Hub</span>
+      </span>
+    </a>
+    <div class="search-bar">
+      <input type="text" class="search-input" id="searchInput" placeholder="ابحث عن منتجات، موردين..." />
+      <select class="search-select" id="searchCategory">
+        <option value="">جميع الفئات</option>
+        <option value="cat1">الإلكترونيات</option>
+        <option value="cat2">الملابس</option>
+        <option value="cat3">الآلات</option>
+        <option value="cat4">المنزل</option>
+        <option value="cat5">الجمال</option>
+        <option value="cat6">السيارات</option>
+        <option value="cat7">الرياضة</option>
+        <option value="cat8">الأغذية</option>
+      </select>
+      <button class="search-btn" onclick="doSearch()"><i class="fas fa-search"></i></button>
+    </div>
+    <div class="header-actions">
+      <button class="header-btn" onclick="window.location='cart.html'">
+        <i class="fas fa-shopping-cart"></i><span>السلة</span>
+        <span class="badge" id="cartCount">0</span>
+      </button>
+      <button class="header-btn" onclick="window.location='auth.html'">
+        <i class="fas fa-user-circle"></i><span>حسابي</span>
+      </button>
+    </div>
+  </div>
+</header>
+
+<!-- NAV -->
+<nav>
+  <div class="container">
+    <div class="nav-inner">
+      <a href="index.html#categories" class="nav-link all-categories-btn"><i class="fas fa-th"></i> جميع الفئات</a>
+      <a href="products.html" class="nav-link active"><i class="fas fa-fire"></i> العروض الساخنة</a>
+      <a href="products.html?filter=new" class="nav-link"><i class="fas fa-star"></i> وصل حديثاً</a>
+      <a href="products.html?filter=bulk" class="nav-link"><i class="fas fa-boxes"></i> طلبات الجملة</a>
+      <a href="products.html?filter=verified" class="nav-link"><i class="fas fa-shield-alt"></i> موردون معتمدون</a>
+      <a href="seller.html" class="nav-link"><i class="fas fa-chart-line"></i> لوحة البائع</a>
+    </div>
+  </div>
+</nav>
+
+<div class="container">
+  <!-- Breadcrumb -->
+  <nav class="breadcrumb">
+    <a href="index.html">الرئيسية</a>
+    <span><i class="fas fa-chevron-left"></i></span>
+    <span id="breadcrumbCurrent">جميع المنتجات</span>
+  </nav>
+
+  <!-- Category Tabs -->
+  <div class="cat-tabs" id="catTabs">
+    <button class="cat-tab active" data-cat="">الكل</button>
+  </div>
+
+  <div class="page-layout">
+    <!-- Filters Sidebar -->
+    <aside class="filters-sidebar">
+      <div class="filter-header">
+        <h3><i class="fas fa-sliders-h"></i> الفلاتر</h3>
+        <button class="filter-reset" onclick="resetFilters()"><i class="fas fa-redo"></i> إعادة</button>
+      </div>
+
+      <!-- Price Range -->
+      <div class="filter-section">
+        <h4 onclick="toggleFilter(this)">نطاق السعر <i class="fas fa-chevron-up"></i></h4>
+        <div class="price-range">
+          <input type="number" class="price-input" id="priceMin" placeholder="من" min="0" />
+          <span style="color:var(--text-light)">–</span>
+          <input type="number" class="price-input" id="priceMax" placeholder="إلى" min="0" />
+          <button onclick="applyPriceFilter()" style="padding:6px 10px;background:var(--primary);color:white;border:none;border-radius:var(--radius-sm);cursor:pointer;font-size:12px;">تطبيق</button>
+        </div>
+      </div>
+
+      <!-- Min Order -->
+      <div class="filter-section">
+        <h4 onclick="toggleFilter(this)">الحد الأدنى للطلب <i class="fas fa-chevron-up"></i></h4>
+        <div id="minOrderFilter">
+          <label class="filter-option"><input type="checkbox" value="1" onchange="applyMinOrder(this)"> 1+ قطعة</label>
+          <label class="filter-option"><input type="checkbox" value="50" onchange="applyMinOrder(this)"> 50+ قطعة</label>
+          <label class="filter-option"><input type="checkbox" value="100" onchange="applyMinOrder(this)"> 100+ قطعة</label>
+          <label class="filter-option"><input type="checkbox" value="500" onchange="applyMinOrder(this)"> 500+ قطعة</label>
+        </div>
+      </div>
+
+      <!-- Rating -->
+      <div class="filter-section">
+        <h4 onclick="toggleFilter(this)">التقييم <i class="fas fa-chevron-up"></i></h4>
+        <div id="ratingFilter">
+          <label class="filter-option"><input type="radio" name="rating" value="4" onchange="applyFilters()"> ⭐⭐⭐⭐ فأعلى</label>
+          <label class="filter-option"><input type="radio" name="rating" value="3" onchange="applyFilters()"> ⭐⭐⭐ فأعلى</label>
+          <label class="filter-option"><input type="radio" name="rating" value="0" onchange="applyFilters()"> الكل</label>
+        </div>
+      </div>
+
+      <!-- Supplier Country -->
+      <div class="filter-section">
+        <h4 onclick="toggleFilter(this)">دولة المورد <i class="fas fa-chevron-up"></i></h4>
+        <div id="countryFilter">
+          <label class="filter-option"><input type="checkbox" value="الصين" onchange="applyFilters()"> 🇨🇳 الصين</label>
+          <label class="filter-option"><input type="checkbox" value="بنغلاديش" onchange="applyFilters()"> 🇧🇩 بنغلاديش</label>
+          <label class="filter-option"><input type="checkbox" value="ألمانيا" onchange="applyFilters()"> 🇩🇪 ألمانيا</label>
+          <label class="filter-option"><input type="checkbox" value="تركيا" onchange="applyFilters()"> 🇹🇷 تركيا</label>
+          <label class="filter-option"><input type="checkbox" value="كوريا الجنوبية" onchange="applyFilters()"> 🇰🇷 كوريا</label>
+        </div>
+      </div>
+
+      <!-- Verified Only -->
+      <div class="filter-section">
+        <h4>خيارات أخرى</h4>
+        <label class="filter-option"><input type="checkbox" id="verifiedOnly" onchange="applyFilters()"> موردون معتمدون فقط</label>
+        <label class="filter-option"><input type="checkbox" id="discountOnly" onchange="applyFilters()"> المنتجات ذات الخصم</label>
+        <label class="filter-option"><input type="checkbox" id="inStockOnly" onchange="applyFilters()"> متوفر في المخزون</label>
+      </div>
+    </aside>
+
+    <!-- Products Main Area -->
+    <main class="products-area">
+      <!-- Active Filters -->
+      <div class="active-filters" id="activeFilters"></div>
+
+      <!-- Toolbar -->
+      <div class="products-toolbar">
+        <div class="toolbar-left">
+          <span class="results-count">عرض <strong id="resultCount">0</strong> منتج</span>
+        </div>
+        <div class="toolbar-right">
+          <select class="sort-select" id="sortSelect" onchange="applyFilters()">
+            <option value="default">ترتيب افتراضي</option>
+            <option value="price_asc">السعر: من الأقل</option>
+            <option value="price_desc">السعر: من الأعلى</option>
+            <option value="rating">الأعلى تقييماً</option>
+            <option value="reviews">الأكثر مراجعات</option>
+          </select>
+          <button class="view-btn active" id="gridViewBtn" onclick="setView('grid')" title="عرض شبكي"><i class="fas fa-th"></i></button>
+          <button class="view-btn" id="listViewBtn" onclick="setView('list')" title="عرض قائمة"><i class="fas fa-list"></i></button>
+        </div>
+      </div>
+
+      <!-- Products Grid -->
+      <div class="products-grid" id="productsGrid">
+        <div class="loading-spinner" style="grid-column:1/-1"><div class="spinner"></div></div>
+      </div>
+
+      <!-- Pagination -->
+      <div class="pagination" id="pagination"></div>
+    </main>
+  </div>
+</div>
+
+<!-- Inquiry Modal -->
+<div class="modal-overlay" id="inquiryModal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3><i class="fas fa-envelope"></i> طلب عرض سعر</h3>
+      <button class="modal-close" onclick="closeModal()">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label">المنتج</label>
+        <input type="text" class="form-control" id="inquiryProduct" readonly />
+      </div>
+      <div class="form-group">
+        <label class="form-label">اسمك الكامل</label>
+        <input type="text" class="form-control" placeholder="أدخل اسمك" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">البريد الإلكتروني</label>
+        <input type="email" class="form-control" placeholder="example@email.com" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">الكمية المطلوبة</label>
+        <input type="number" class="form-control" placeholder="أدخل الكمية" min="1" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">رسالتك</label>
+        <textarea class="form-control" rows="3" placeholder="أدخل تفاصيل الطلب..."></textarea>
+      </div>
+      <button class="btn btn-primary" style="width:100%" onclick="sendInquiry()">
+        <i class="fas fa-paper-plane"></i> إرسال الطلب
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast-container" id="toastContainer"></div>
+
+<script src="js/main.js"></script>
+<script>
+// === PRODUCTS PAGE ===
+let allProducts = [];
+let filteredProducts = [];
+let currentPage = 1;
+const ITEMS_PER_PAGE = 12;
+let currentView = 'grid';
+
+const params = new URLSearchParams(location.search);
+
+async function loadAllProducts() {
+  try {
+    const res = await fetch('tables/products?limit=100');
+    const data = await res.json();
+    allProducts = data.data || [];
+    allProducts.forEach(p => productsCache[p.id] = p);
+    await loadCategoryTabs();
+    applyFilters();
+  } catch {
+    document.getElementById('productsGrid').innerHTML = '<div class="empty-state" style="grid-column:1/-1"><i class="fas fa-exclamation-circle"></i><h3>تعذر تحميل المنتجات</h3></div>';
+  }
+}
+
+async function loadCategoryTabs() {
+  const res = await fetch('tables/categories?limit=20');
+  const data = await res.json();
+  const cats = data.data || [];
+  const tabs = document.getElementById('catTabs');
+  const activeCat = params.get('category') || '';
+  tabs.innerHTML = `<button class="cat-tab ${!activeCat ? 'active' : ''}" data-cat="" onclick="setCategoryTab('')">الكل</button>`;
+  cats.forEach(c => {
+    tabs.innerHTML += `<button class="cat-tab ${activeCat === c.id ? 'active' : ''}" data-cat="${c.id}" onclick="setCategoryTab('${c.id}')">${c.name_ar || c.name}</button>`;
+  });
+}
+
+function setCategoryTab(catId) {
+  document.querySelectorAll('.cat-tab').forEach(t => t.classList.remove('active'));
+  document.querySelector(`.cat-tab[data-cat="${catId}"]`)?.classList.add('active');
+  params.set('category', catId);
+  currentPage = 1;
+  applyFilters();
+}
+
+function applyFilters() {
+  let products = [...allProducts];
+
+  // Search
+  const searchQ = params.get('search') || document.getElementById('searchInput')?.value?.trim();
+  if (searchQ) {
+    const q = searchQ.toLowerCase();
+    products = products.filter(p =>
+      (p.name_ar || '').toLowerCase().includes(q) ||
+      (p.name || '').toLowerCase().includes(q) ||
+      (p.supplier || '').toLowerCase().includes(q) ||
+      (p.tags || []).some(t => t.includes(q))
+    );
+  }
+
+  // Category
+  const catFilter = params.get('category') || document.querySelector('.cat-tab.active')?.dataset?.cat;
+  if (catFilter) products = products.filter(p => p.category === catFilter);
+
+  // Price Range
+  const priceMin = parseFloat(document.getElementById('priceMin')?.value);
+  const priceMax = parseFloat(document.getElementById('priceMax')?.value);
+  if (!isNaN(priceMin)) products = products.filter(p => p.price_min >= priceMin);
+  if (!isNaN(priceMax)) products = products.filter(p => p.price_max <= priceMax);
+
+  // Rating
+  const ratingVal = document.querySelector('input[name="rating"]:checked')?.value;
+  if (ratingVal && parseFloat(ratingVal) > 0) products = products.filter(p => (p.rating || 0) >= parseFloat(ratingVal));
+
+  // Countries
+  const checkedCountries = [...document.querySelectorAll('#countryFilter input:checked')].map(i => i.value);
+  if (checkedCountries.length) products = products.filter(p => checkedCountries.includes(p.supplier_country));
+
+  // Other options
+  if (document.getElementById('discountOnly')?.checked) products = products.filter(p => p.discount > 0);
+  if (document.getElementById('inStockOnly')?.checked) products = products.filter(p => p.in_stock);
+
+  // Discount filter (url param)
+  if (params.get('filter') === 'bulk') products = products.filter(p => (p.min_order || 1) >= 50);
+
+  // Sort
+  const sort = document.getElementById('sortSelect')?.value;
+  if (sort === 'price_asc') products.sort((a, b) => (a.price_min || 0) - (b.price_min || 0));
+  else if (sort === 'price_desc') products.sort((a, b) => (b.price_min || 0) - (a.price_min || 0));
+  else if (sort === 'rating') products.sort((a, b) => (b.rating || 0) - (a.rating || 0));
+  else if (sort === 'reviews') products.sort((a, b) => (b.reviews_count || 0) - (a.reviews_count || 0));
+
+  filteredProducts = products;
+  document.getElementById('resultCount').textContent = products.length;
+  renderProducts();
+  renderPagination();
+}
+
+function applyPriceFilter() { currentPage = 1; applyFilters(); }
+function applyMinOrder(cb) {
+  document.querySelectorAll('#minOrderFilter input').forEach(i => { if (i !== cb) i.checked = false; });
+  applyFilters();
+}
+
+function renderProducts() {
+  const grid = document.getElementById('productsGrid');
+  const start = (currentPage - 1) * ITEMS_PER_PAGE;
+  const items = filteredProducts.slice(start, start + ITEMS_PER_PAGE);
+  if (!items.length) {
+    grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1">
+      <i class="fas fa-search"></i>
+      <h3>لا توجد منتجات تطابق البحث</h3>
+      <p>جرب تغيير معايير البحث أو الفلاتر</p>
+      <button class="btn btn-outline" onclick="resetFilters()" style="margin-top:12px">إعادة تعيين الفلاتر</button>
+    </div>`;
+    return;
+  }
+  grid.innerHTML = items.map(buildProductCard).join('');
+}
+
+function renderPagination() {
+  const total = Math.ceil(filteredProducts.length / ITEMS_PER_PAGE);
+  const pg = document.getElementById('pagination');
+  if (total <= 1) { pg.innerHTML = ''; return; }
+  let html = `<button class="page-btn" onclick="goPage(${currentPage-1})" ${currentPage===1?'disabled':''}><i class="fas fa-chevron-right"></i></button>`;
+  for (let i = 1; i <= total; i++) {
+    if (i === 1 || i === total || Math.abs(i - currentPage) <= 1) {
+      html += `<button class="page-btn ${i===currentPage?'active':''}" onclick="goPage(${i})">${i}</button>`;
+    } else if (Math.abs(i - currentPage) === 2) {
+      html += `<span style="padding:0 4px;color:var(--text-light)">...</span>`;
+    }
+  }
+  html += `<button class="page-btn" onclick="goPage(${currentPage+1})" ${currentPage===total?'disabled':''}><i class="fas fa-chevron-left"></i></button>`;
+  pg.innerHTML = html;
+}
+
+function goPage(n) {
+  const total = Math.ceil(filteredProducts.length / ITEMS_PER_PAGE);
+  if (n < 1 || n > total) return;
+  currentPage = n;
+  renderProducts();
+  renderPagination();
+  window.scrollTo({ top: 300, behavior: 'smooth' });
+}
+
+function setView(v) {
+  currentView = v;
+  const grid = document.getElementById('productsGrid');
+  document.getElementById('gridViewBtn').classList.toggle('active', v === 'grid');
+  document.getElementById('listViewBtn').classList.toggle('active', v === 'list');
+  grid.classList.toggle('list-view', v === 'list');
+}
+
+function resetFilters() {
+  document.querySelectorAll('.filters-sidebar input').forEach(i => {
+    if (i.type === 'checkbox' || i.type === 'radio') i.checked = false;
+    else i.value = '';
+  });
+  document.querySelectorAll('.cat-tab').forEach(t => t.classList.remove('active'));
+  document.querySelector('.cat-tab[data-cat=""]')?.classList.add('active');
+  currentPage = 1;
+  applyFilters();
+}
+
+function toggleFilter(el) {
+  const section = el.nextElementSibling;
+  if (section) {
+    section.style.display = section.style.display === 'none' ? '' : 'none';
+    el.querySelector('i').className = section.style.display === 'none' ? 'fas fa-chevron-down' : 'fas fa-chevron-up';
+  }
+}
+
+function closeModal() {
+  document.getElementById('inquiryModal')?.classList.remove('open');
+}
+function sendInquiry() {
+  showToast('تم إرسال طلب عرض السعر بنجاح ✅', 'success');
+  closeModal();
+}
+document.getElementById('inquiryModal')?.addEventListener('click', e => {
+  if (e.target.id === 'inquiryModal') closeModal();
+});
+
+// Pre-fill search
+const searchParam = params.get('search');
+if (searchParam) document.getElementById('searchInput').value = searchParam;
+
+loadAllProducts();
+</script>
+<!-- AI Assistant + PWA Manager -->
+<script src="js/countries.js"></script>
+<script src="js/whatsapp.js"></script>
+<script src="js/chatbot.js"></script>
+</body>
+</html>

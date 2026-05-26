@@ -1,0 +1,678 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>لوحة تحكم البائع - TradeHub Pro</title>
+  <!-- PWA -->
+  <meta name="theme-color" content="#f59e0b" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-title" content="TradeHub Pro" />
+  <link rel="manifest" href="manifest.json" />
+  <link rel="apple-touch-icon" href="icons/icon-192x192.png" />
+  <link rel="icon" type="image/svg+xml" href="icons/icon.svg" />
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <link rel="stylesheet" href="css/style.css" />
+  <!-- Auth Guard: runs before page renders -->
+  <script src="js/auth.js"></script>
+  <script>
+    // ── Auth Guard for Seller Dashboard ──────────────
+    // Must be a logged-in seller to access this page
+    (function authGuard() {
+      // Wait for auth.js to define getSession
+      const session = typeof getSession === 'function' ? getSession() : null;
+      if (!session) {
+        window.location.replace('auth.html?mode=login&next=seller.html&forbidden=seller');
+        document.documentElement.style.visibility = 'hidden';
+        return;
+      }
+      const now = Math.floor(Date.now() / 1000);
+      if (session.exp && session.exp < now) {
+        localStorage.removeItem('tradehub_token');
+        window.location.replace('auth.html?mode=login&expired=1&next=seller.html');
+        document.documentElement.style.visibility = 'hidden';
+        return;
+      }
+      if (session.role !== 'seller') {
+        window.location.replace('auth.html?mode=login&forbidden=1');
+        document.documentElement.style.visibility = 'hidden';
+        return;
+      }
+      // Show page
+      document.documentElement.style.visibility = 'visible';
+    })();
+  </script>
+  <style>
+    .dashboard { display: flex; min-height: calc(100vh - 120px); }
+
+    /* Sidebar */
+    .dash-sidebar { width: 240px; background: var(--secondary); flex-shrink: 0; padding: 24px 0; }
+    .dash-user { padding: 0 20px 20px; border-bottom: 1px solid rgba(255,255,255,0.08); margin-bottom: 12px; }
+    .dash-avatar { width: 52px; height: 52px; border-radius: 50%; background: var(--primary); color: white; display: flex; align-items: center; justify-content: center; font-size: 22px; font-weight: 800; margin-bottom: 10px; }
+    .dash-user-name { color: white; font-size: 14px; font-weight: 700; }
+    .dash-user-role { font-size: 11px; color: rgba(255,255,255,0.4); }
+    .dash-verified { display: inline-flex; align-items: center; gap: 4px; background: rgba(0,184,148,0.15); color: var(--success); padding: 2px 8px; border-radius: 10px; font-size: 10px; margin-top: 4px; }
+    .dash-nav { list-style: none; }
+    .dash-nav li a, .dash-nav li button {
+      display: flex; align-items: center; gap: 12px; padding: 11px 20px;
+      color: rgba(255,255,255,0.6); font-size: 13px; font-weight: 600;
+      transition: var(--transition); width: 100%; border: none; background: none;
+      cursor: pointer; font-family: inherit; text-align: right;
+    }
+    .dash-nav li a:hover, .dash-nav li button:hover { color: white; background: rgba(255,255,255,0.06); }
+    .dash-nav li a.active, .dash-nav li button.active { color: var(--primary); background: rgba(255,107,53,0.12); border-right: 3px solid var(--primary); }
+    .dash-nav li a i, .dash-nav li button i { font-size: 16px; width: 20px; text-align: center; }
+    .dash-nav-section { padding: 8px 20px; font-size: 10px; color: rgba(255,255,255,0.25); text-transform: uppercase; letter-spacing: 1px; margin-top: 8px; }
+
+    /* Main Content */
+    .dash-main { flex: 1; padding: 24px; background: var(--bg-light); overflow: auto; }
+    .dash-page { display: none; }
+    .dash-page.active { display: block; }
+    .dash-title { font-size: 22px; font-weight: 800; color: var(--secondary); margin-bottom: 24px; display: flex; align-items: center; gap: 10px; }
+    .dash-title i { color: var(--primary); }
+
+    /* KPI Cards */
+    .kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; }
+    .kpi-card { background: white; border-radius: var(--radius-md); padding: 20px; border: 1px solid var(--border); position: relative; overflow: hidden; }
+    .kpi-label { font-size: 13px; color: var(--text-light); margin-bottom: 6px; }
+    .kpi-value { font-size: 28px; font-weight: 800; color: var(--secondary); margin-bottom: 4px; }
+    .kpi-change { font-size: 12px; display: flex; align-items: center; gap: 4px; }
+    .kpi-change.up { color: var(--success); }
+    .kpi-change.down { color: var(--danger); }
+    .kpi-icon { position: absolute; top: 16px; left: 16px; width: 44px; height: 44px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 20px; }
+
+    /* Charts */
+    .charts-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 16px; margin-bottom: 24px; }
+    .chart-card { background: white; border: 1px solid var(--border); border-radius: var(--radius-md); padding: 20px; }
+    .chart-card h4 { font-size: 15px; font-weight: 700; margin-bottom: 16px; color: var(--secondary); }
+    .chart-wrap { height: 250px; }
+
+    /* Orders Table */
+    .data-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    .data-table th { background: var(--bg-light); padding: 12px 16px; text-align: right; font-size: 12px; font-weight: 700; color: var(--text-mid); border-bottom: 2px solid var(--border); }
+    .data-table td { padding: 12px 16px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+    .data-table tr:hover td { background: var(--primary-light); }
+    .status-badge { padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; }
+    .status-pending { background: #fff3cd; color: #856404; }
+    .status-processing { background: #cce5ff; color: #004085; }
+    .status-shipped { background: #d4edda; color: #155724; }
+    .status-delivered { background: #e8f8f0; color: var(--success); }
+    .status-cancelled { background: #f8d7da; color: #721c24; }
+
+    /* Products Management */
+    .product-mgmt-toolbar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; gap: 12px; flex-wrap: wrap; }
+    .search-box { display: flex; gap: 8px; }
+    .search-box input { padding: 8px 14px; border: 1.5px solid var(--border); border-radius: var(--radius-sm); font-size: 13px; outline: none; width: 220px; }
+    .search-box input:focus { border-color: var(--primary); }
+
+    /* Add Product Form */
+    .add-product-form { background: white; border: 1px solid var(--border); border-radius: var(--radius-md); padding: 24px; }
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .form-full { grid-column: 1 / -1; }
+    .form-section-title { font-size: 14px; font-weight: 700; color: var(--secondary); padding-bottom: 8px; border-bottom: 2px solid var(--primary); margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+
+    /* Notifications */
+    .notif-item { display: flex; gap: 12px; padding: 14px 0; border-bottom: 1px solid var(--border); }
+    .notif-icon { width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0; }
+    .notif-body h4 { font-size: 13px; font-weight: 700; margin-bottom: 3px; }
+    .notif-body p { font-size: 12px; color: var(--text-light); }
+
+    @media (max-width:1000px) { .kpi-grid { grid-template-columns: repeat(2,1fr); } .charts-grid { grid-template-columns: 1fr; } }
+    @media (max-width:700px) { .dashboard { flex-direction: column; } .dash-sidebar { width: 100%; } }
+  </style>
+</head>
+<body>
+
+<!-- Top Nav (Minimal) -->
+<div style="background:var(--secondary);padding:12px 0;border-bottom:3px solid var(--primary)">
+  <div class="container" style="display:flex;align-items:center;justify-content:space-between">
+    <a href="index.html" class="logo" style="color:white">
+      <span class="logo-dynamic">
+        <div class="logo-icon"><i class="fas fa-globe-asia"></i></div>
+        Trade<span style="color:var(--primary)">Hub</span>
+      </span>
+      <span style="font-size:13px;color:rgba(255,255,255,0.4);font-weight:400;margin-right:8px">/ لوحة البائع</span>
+    </a>
+    <div style="display:flex;align-items:center;gap:16px">
+      <button style="background:none;border:none;color:rgba(255,255,255,0.6);cursor:pointer;font-size:18px;position:relative" onclick="showPage('notifications')">
+        <i class="fas fa-bell"></i>
+        <span style="position:absolute;top:-4px;left:-4px;background:var(--danger);color:white;font-size:9px;width:16px;height:16px;border-radius:50%;display:flex;align-items:center;justify-content:center">3</span>
+      </button>
+      <a href="index.html" style="color:rgba(255,255,255,0.6);font-size:13px"><i class="fas fa-home"></i> العودة للرئيسية</a>
+      <a href="auth.html" style="color:rgba(255,255,255,0.6);font-size:13px"><i class="fas fa-sign-out-alt"></i> خروج</a>
+    </div>
+  </div>
+</div>
+
+<div class="dashboard">
+  <!-- Sidebar -->
+  <aside class="dash-sidebar">
+    <div class="dash-user">
+      <div class="dash-avatar">أ</div>
+      <div class="dash-user-name">أحمد المورد</div>
+      <div class="dash-user-role">بائع / مورد</div>
+      <div class="dash-verified"><i class="fas fa-check-circle"></i> حساب معتمد</div>
+    </div>
+
+    <div class="dash-nav-section">الرئيسية</div>
+    <ul class="dash-nav">
+      <li><button class="active" onclick="showPage('overview')"><i class="fas fa-chart-pie"></i> نظرة عامة</button></li>
+      <li><button onclick="showPage('analytics')"><i class="fas fa-chart-line"></i> التحليلات</button></li>
+      <li><button onclick="showPage('notifications')"><i class="fas fa-bell"></i> الإشعارات <span style="background:var(--danger);color:white;font-size:10px;padding:2px 7px;border-radius:10px;margin-right:auto">3</span></button></li>
+    </ul>
+
+    <div class="dash-nav-section">الإدارة</div>
+    <ul class="dash-nav">
+      <li><button onclick="showPage('products')"><i class="fas fa-boxes"></i> إدارة المنتجات</button></li>
+      <li><button onclick="showPage('add-product')"><i class="fas fa-plus-circle"></i> إضافة منتج</button></li>
+      <li><button onclick="showPage('orders')"><i class="fas fa-shopping-bag"></i> الطلبات</button></li>
+      <li><button onclick="showPage('inquiries')"><i class="fas fa-envelope"></i> الاستفسارات</button></li>
+    </ul>
+
+    <div class="dash-nav-section">الحساب</div>
+    <ul class="dash-nav">
+      <li><button onclick="showPage('profile')"><i class="fas fa-user-edit"></i> الملف الشخصي</button></li>
+      <li><button onclick="showPage('payments')"><i class="fas fa-wallet"></i> المدفوعات</button></li>
+      <li><a href="index.html"><i class="fas fa-store"></i> عرض المتجر</a></li>
+    </ul>
+  </aside>
+
+  <!-- Main Dashboard -->
+  <main class="dash-main">
+
+    <!-- OVERVIEW PAGE -->
+    <div class="dash-page active" id="page-overview">
+      <h2 class="dash-title"><i class="fas fa-chart-pie"></i> نظرة عامة على المتجر</h2>
+
+      <div class="kpi-grid">
+        <div class="kpi-card">
+          <div class="kpi-icon" style="background:#fff3ee"><i class="fas fa-dollar-sign" style="color:var(--primary)"></i></div>
+          <div class="kpi-label">إجمالي الإيرادات</div>
+          <div class="kpi-value">$48,230</div>
+          <div class="kpi-change up"><i class="fas fa-arrow-up"></i> +12.5% هذا الشهر</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-icon" style="background:#e8f8f0"><i class="fas fa-shopping-bag" style="color:var(--success)"></i></div>
+          <div class="kpi-label">إجمالي الطلبات</div>
+          <div class="kpi-value">1,284</div>
+          <div class="kpi-change up"><i class="fas fa-arrow-up"></i> +8.2% هذا الشهر</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-icon" style="background:#e3f0ff"><i class="fas fa-boxes" style="color:#0984e3"></i></div>
+          <div class="kpi-label">المنتجات النشطة</div>
+          <div class="kpi-value">87</div>
+          <div class="kpi-change up"><i class="fas fa-arrow-up"></i> +5 منتجات جديدة</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-icon" style="background:#f3e8ff"><i class="fas fa-star" style="color:#6c5ce7"></i></div>
+          <div class="kpi-label">متوسط التقييم</div>
+          <div class="kpi-value">4.8 ★</div>
+          <div class="kpi-change up"><i class="fas fa-arrow-up"></i> +0.2 هذا الشهر</div>
+        </div>
+      </div>
+
+      <div class="charts-grid">
+        <div class="chart-card">
+          <h4><i class="fas fa-chart-line" style="color:var(--primary)"></i> إيرادات الأشهر الستة الماضية</h4>
+          <div class="chart-wrap"><canvas id="revenueChart"></canvas></div>
+        </div>
+        <div class="chart-card">
+          <h4><i class="fas fa-chart-pie" style="color:var(--primary)"></i> المبيعات حسب الفئة</h4>
+          <div class="chart-wrap"><canvas id="categoryChart"></canvas></div>
+        </div>
+      </div>
+
+      <!-- Recent Orders -->
+      <div class="chart-card">
+        <h4><i class="fas fa-clock" style="color:var(--primary)"></i> أحدث الطلبات</h4>
+        <div style="overflow-x:auto">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>رقم الطلب</th>
+                <th>المشتري</th>
+                <th>المنتج</th>
+                <th>الكمية</th>
+                <th>القيمة</th>
+                <th>الحالة</th>
+                <th>التاريخ</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td>#TH-2024-001</td><td>Ahmed K.</td><td>سماعات بلوتوث</td><td>500 حبة</td><td>$2,750</td><td><span class="status-badge status-shipped">تم الشحن</span></td><td>15 مايو 2026</td></tr>
+              <tr><td>#TH-2024-002</td><td>Sara M.</td><td>تيشيرت كاجوال</td><td>1,000 قطعة</td><td>$3,500</td><td><span class="status-badge status-processing">قيد التجهيز</span></td><td>14 مايو 2026</td></tr>
+              <tr><td>#TH-2024-003</td><td>Omar Tech</td><td>حافظات هواتف</td><td>2,000 حبة</td><td>$1,600</td><td><span class="status-badge status-delivered">تم التسليم</span></td><td>13 مايو 2026</td></tr>
+              <tr><td>#TH-2024-004</td><td>Liu Trading</td><td>مصابيح LED</td><td>300 زوج</td><td>$4,200</td><td><span class="status-badge status-pending">قيد المراجعة</span></td><td>12 مايو 2026</td></tr>
+              <tr><td>#TH-2024-005</td><td>Global Corp</td><td>باور بنك شمسي</td><td>200 حبة</td><td>$2,800</td><td><span class="status-badge status-shipped">تم الشحن</span></td><td>11 مايو 2026</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- PRODUCTS PAGE -->
+    <div class="dash-page" id="page-products">
+      <h2 class="dash-title"><i class="fas fa-boxes"></i> إدارة المنتجات</h2>
+      <div class="product-mgmt-toolbar">
+        <div class="search-box">
+          <input type="text" placeholder="بحث في المنتجات..." id="productSearch" oninput="filterDashProducts()" />
+        </div>
+        <button class="btn btn-primary" onclick="showPage('add-product')"><i class="fas fa-plus"></i> إضافة منتج جديد</button>
+      </div>
+      <div class="chart-card">
+        <div style="overflow-x:auto">
+          <table class="data-table" id="dashProductsTable">
+            <thead>
+              <tr>
+                <th>الصورة</th>
+                <th>اسم المنتج</th>
+                <th>الفئة</th>
+                <th>السعر</th>
+                <th>الحد الأدنى</th>
+                <th>التقييم</th>
+                <th>الحالة</th>
+                <th>الإجراءات</th>
+              </tr>
+            </thead>
+            <tbody id="dashProductsBody">
+              <tr><td colspan="8" style="text-align:center;padding:20px"><div class="spinner" style="margin:0 auto"></div></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ADD PRODUCT PAGE -->
+    <div class="dash-page" id="page-add-product">
+      <h2 class="dash-title"><i class="fas fa-plus-circle"></i> إضافة منتج جديد</h2>
+      <div class="add-product-form">
+        <div class="form-section-title"><i class="fas fa-info-circle"></i> المعلومات الأساسية</div>
+        <div class="form-grid">
+          <div class="form-group">
+            <label class="form-label">اسم المنتج (عربي)</label>
+            <input type="text" class="form-control" id="newProductNameAr" placeholder="مثال: سماعات بلوتوث لاسلكية" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">اسم المنتج (إنجليزي)</label>
+            <input type="text" class="form-control" id="newProductName" placeholder="e.g. Wireless Bluetooth Earbuds" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">الفئة</label>
+            <select class="form-control" id="newProductCat">
+              <option value="cat1">الإلكترونيات</option>
+              <option value="cat2">الملابس والأزياء</option>
+              <option value="cat3">الآلات والمعدات</option>
+              <option value="cat4">المنزل والحديقة</option>
+              <option value="cat5">الجمال والصحة</option>
+              <option value="cat6">السيارات</option>
+              <option value="cat7">الرياضة واللياقة</option>
+              <option value="cat8">الأغذية والمشروبات</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">الفئة الفرعية</label>
+            <input type="text" class="form-control" id="newProductSubcat" placeholder="مثال: سماعات" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">السعر الأدنى ($)</label>
+            <input type="number" class="form-control" id="newPriceMin" placeholder="0.00" min="0" step="0.01" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">السعر الأقصى ($)</label>
+            <input type="number" class="form-control" id="newPriceMax" placeholder="0.00" min="0" step="0.01" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">وحدة البيع</label>
+            <select class="form-control" id="newUnit">
+              <option>قطعة</option><option>حبة</option><option>زوج</option><option>كيلوغرام</option><option>طقم</option><option>جهاز</option><option>متر</option><option>لتر</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">الحد الأدنى للطلب</label>
+            <input type="number" class="form-control" id="newMinOrder" placeholder="100" min="1" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">نسبة الخصم (%)</label>
+            <input type="number" class="form-control" id="newDiscount" placeholder="0" min="0" max="100" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">رابط الصورة</label>
+            <input type="url" class="form-control" id="newImage" placeholder="https://..." />
+          </div>
+          <div class="form-group form-full">
+            <label class="form-label">وصف المنتج</label>
+            <textarea class="form-control" id="newDescription" rows="3" placeholder="أدخل وصفاً تفصيلياً للمنتج..."></textarea>
+          </div>
+        </div>
+        <div style="display:flex;gap:12px;margin-top:8px">
+          <button class="btn btn-primary" onclick="addProduct()"><i class="fas fa-save"></i> نشر المنتج</button>
+          <button class="btn btn-outline" onclick="showPage('products')"><i class="fas fa-times"></i> إلغاء</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ORDERS PAGE -->
+    <div class="dash-page" id="page-orders">
+      <h2 class="dash-title"><i class="fas fa-shopping-bag"></i> إدارة الطلبات</h2>
+      <div class="chart-card">
+        <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap">
+          <button class="cat-tab active" onclick="filterOrders('all', this)">الكل (24)</button>
+          <button class="cat-tab" onclick="filterOrders('pending', this)">قيد المراجعة (4)</button>
+          <button class="cat-tab" onclick="filterOrders('processing', this)">جاري التجهيز (8)</button>
+          <button class="cat-tab" onclick="filterOrders('shipped', this)">تم الشحن (7)</button>
+          <button class="cat-tab" onclick="filterOrders('delivered', this)">تم التسليم (5)</button>
+        </div>
+        <div style="overflow-x:auto">
+          <table class="data-table">
+            <thead><tr><th>رقم الطلب</th><th>المشتري</th><th>الدولة</th><th>المنتجات</th><th>القيمة</th><th>الحالة</th><th>التاريخ</th><th>إجراء</th></tr></thead>
+            <tbody id="ordersBody">
+              <tr><td>#TH-001</td><td>Ahmed K.</td><td>🇸🇦 SA</td><td>سماعات ×500</td><td>$2,750</td><td><span class="status-badge status-shipped">تم الشحن</span></td><td>15/05/26</td><td><button class="btn btn-outline" style="padding:4px 10px;font-size:11px">تفاصيل</button></td></tr>
+              <tr><td>#TH-002</td><td>Sara M.</td><td>🇦🇪 AE</td><td>تيشيرت ×1000</td><td>$3,500</td><td><span class="status-badge status-processing">جاري</span></td><td>14/05/26</td><td><button class="btn btn-outline" style="padding:4px 10px;font-size:11px">تفاصيل</button></td></tr>
+              <tr><td>#TH-003</td><td>Omar Tech</td><td>🇪🇬 EG</td><td>حافظات ×2000</td><td>$1,600</td><td><span class="status-badge status-delivered">تم</span></td><td>13/05/26</td><td><button class="btn btn-outline" style="padding:4px 10px;font-size:11px">تفاصيل</button></td></tr>
+              <tr><td>#TH-004</td><td>Liu Trading</td><td>🇨🇳 CN</td><td>LED ×300</td><td>$4,200</td><td><span class="status-badge status-pending">مراجعة</span></td><td>12/05/26</td><td><button class="btn btn-outline" style="padding:4px 10px;font-size:11px">تفاصيل</button></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- INQUIRIES PAGE -->
+    <div class="dash-page" id="page-inquiries">
+      <h2 class="dash-title"><i class="fas fa-envelope"></i> الاستفسارات الواردة</h2>
+      <div class="chart-card">
+        <div style="display:flex;flex-direction:column;gap:16px">
+          ${generateInquiries()}
+        </div>
+      </div>
+    </div>
+
+    <!-- PROFILE PAGE -->
+    <div class="dash-page" id="page-profile">
+      <h2 class="dash-title"><i class="fas fa-user-edit"></i> الملف الشخصي</h2>
+      <div class="add-product-form">
+        <div class="form-section-title"><i class="fas fa-building"></i> معلومات الشركة</div>
+        <div class="form-grid">
+          <div class="form-group"><label class="form-label">اسم الشركة</label><input type="text" class="form-control" value="TechPro Electronics" /></div>
+          <div class="form-group"><label class="form-label">دولة التسجيل</label><input type="text" class="form-control" value="الصين" /></div>
+          <div class="form-group"><label class="form-label">البريد الإلكتروني</label><input type="email" class="form-control" value="info@techpro.com" /></div>
+          <div class="form-group"><label class="form-label">رقم الهاتف</label><input type="tel" class="form-control" value="+86 123 456 7890" /></div>
+          <div class="form-group"><label class="form-label">سنوات الخبرة</label><input type="number" class="form-control" value="12" /></div>
+          <div class="form-group"><label class="form-label">معدل الاستجابة (%)</label><input type="number" class="form-control" value="98" /></div>
+          <div class="form-group form-full"><label class="form-label">وصف الشركة</label><textarea class="form-control" rows="3">شركة متخصصة في الإلكترونيات والتكنولوجيا منذ 2012.</textarea></div>
+        </div>
+        <button class="btn btn-primary" onclick="showToast('تم حفظ التغييرات', 'success')"><i class="fas fa-save"></i> حفظ التغييرات</button>
+      </div>
+    </div>
+
+    <!-- PAYMENTS PAGE -->
+    <div class="dash-page" id="page-payments">
+      <h2 class="dash-title"><i class="fas fa-wallet"></i> المدفوعات والأرصدة</h2>
+      <div class="kpi-grid">
+        <div class="kpi-card"><div class="kpi-label">الرصيد المتاح</div><div class="kpi-value" style="color:var(--success)">$12,450</div></div>
+        <div class="kpi-card"><div class="kpi-label">قيد التسوية</div><div class="kpi-value" style="color:var(--warning)">$3,200</div></div>
+        <div class="kpi-card"><div class="kpi-label">إجمالي المسحوبات</div><div class="kpi-value">$32,580</div></div>
+        <div class="kpi-card"><div class="kpi-label">مدفوعات الشهر</div><div class="kpi-value">$8,120</div></div>
+      </div>
+      <div class="chart-card">
+        <h4>سجل المعاملات</h4>
+        <table class="data-table">
+          <thead><tr><th>المعرّف</th><th>النوع</th><th>المبلغ</th><th>الحالة</th><th>التاريخ</th></tr></thead>
+          <tbody>
+            <tr><td>#PAY-001</td><td>دفعة مبيعات</td><td style="color:var(--success)">+$2,750</td><td><span class="status-badge status-delivered">مكتمل</span></td><td>15/05/26</td></tr>
+            <tr><td>#PAY-002</td><td>سحب</td><td style="color:var(--danger)">-$5,000</td><td><span class="status-badge status-delivered">مكتمل</span></td><td>10/05/26</td></tr>
+            <tr><td>#PAY-003</td><td>دفعة مبيعات</td><td style="color:var(--success)">+$3,500</td><td><span class="status-badge status-processing">معلق</span></td><td>08/05/26</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ANALYTICS PAGE -->
+    <div class="dash-page" id="page-analytics">
+      <h2 class="dash-title"><i class="fas fa-chart-line"></i> التحليلات التفصيلية</h2>
+      <div class="kpi-grid">
+        <div class="kpi-card"><div class="kpi-label">معدل التحويل</div><div class="kpi-value">3.2%</div><div class="kpi-change up"><i class="fas fa-arrow-up"></i> +0.5%</div></div>
+        <div class="kpi-card"><div class="kpi-label">متوسط قيمة الطلب</div><div class="kpi-value">$280</div><div class="kpi-change up"><i class="fas fa-arrow-up"></i> +$35</div></div>
+        <div class="kpi-card"><div class="kpi-label">المشترون المكررون</div><div class="kpi-value">68%</div><div class="kpi-change up"><i class="fas fa-arrow-up"></i> +5%</div></div>
+        <div class="kpi-card"><div class="kpi-label">مشاهدات الصفحة</div><div class="kpi-value">24,500</div><div class="kpi-change up"><i class="fas fa-arrow-up"></i> +1,200</div></div>
+      </div>
+      <div class="chart-card">
+        <h4>مشاهدات المنتجات مقارنة بالطلبات</h4>
+        <div style="height:300px"><canvas id="analyticsChart"></canvas></div>
+      </div>
+    </div>
+
+    <!-- NOTIFICATIONS PAGE -->
+    <div class="dash-page" id="page-notifications">
+      <h2 class="dash-title"><i class="fas fa-bell"></i> الإشعارات</h2>
+      <div class="chart-card">
+        ${generateNotifications()}
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<div class="toast-container" id="toastContainer"></div>
+
+<script src="js/main.js"></script>
+<script>
+  // Populate seller info from JWT session
+  (function populateSellerInfo() {
+    const session = typeof getSession === 'function' ? getSession() : null;
+    if (!session) return;
+    const nameEls = document.querySelectorAll('.dash-user-name, #sellerDisplayName');
+    nameEls.forEach(el => { if(el) el.textContent = session.name || 'المورد'; });
+    const avatarEls = document.querySelectorAll('.dash-avatar, #sellerAvatar');
+    avatarEls.forEach(el => {
+      if(el) el.textContent = (session.name||'M').substring(0,2).toUpperCase();
+    });
+    // Add logout handler
+    const logoutBtns = document.querySelectorAll('[data-logout]');
+    logoutBtns.forEach(btn => btn.addEventListener('click', () => logoutUser('auth.html')));
+  })();
+</script>
+<script>
+let dashProducts = [];
+
+function showToast(message, type = 'info') {
+  const container = document.getElementById('toastContainer');
+  if (!container) return;
+  const icons = { success: 'fa-check-circle', error: 'fa-times-circle', info: 'fa-info-circle' };
+  const toast = document.createElement('div');
+  toast.className = `toast ${type}`;
+  toast.innerHTML = `<i class="fas ${icons[type]||icons.info}" style="font-size:18px"></i><span>${message}</span>`;
+  container.appendChild(toast);
+  setTimeout(() => { toast.style.animation = 'slideOut 0.3s ease forwards'; setTimeout(() => toast.remove(), 300); }, 3000);
+}
+
+function showPage(page) {
+  document.querySelectorAll('.dash-page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.dash-nav button, .dash-nav a').forEach(b => b.classList.remove('active'));
+  document.getElementById('page-' + page)?.classList.add('active');
+  document.querySelectorAll('.dash-nav button, .dash-nav a').forEach(b => {
+    if (b.getAttribute('onclick')?.includes(page)) b.classList.add('active');
+  });
+  if (page === 'analytics') setTimeout(initAnalyticsChart, 100);
+}
+
+// Charts
+window.addEventListener('load', () => {
+  // Revenue Chart
+  new Chart(document.getElementById('revenueChart'), {
+    type: 'line',
+    data: {
+      labels: ['ديسمبر', 'يناير', 'فبراير', 'مارس', 'أبريل', 'مايو'],
+      datasets: [{
+        label: 'الإيرادات ($)',
+        data: [28000, 35000, 31000, 42000, 38000, 48230],
+        borderColor: '#FF6B35', backgroundColor: 'rgba(255,107,53,0.1)',
+        borderWidth: 3, fill: true, tension: 0.4, pointBackgroundColor: '#FF6B35'
+      }]
+    },
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: false } } }
+  });
+
+  // Category Chart
+  new Chart(document.getElementById('categoryChart'), {
+    type: 'doughnut',
+    data: {
+      labels: ['إلكترونيات', 'ملابس', 'آلات', 'منزل', 'أخرى'],
+      datasets: [{ data: [45, 25, 15, 10, 5], backgroundColor: ['#FF6B35', '#4ECDC4', '#45B7D1', '#96CEB4', '#ff9f43'], borderWidth: 0 }]
+    },
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { font: { family: 'Cairo' } } } } }
+  });
+});
+
+function initAnalyticsChart() {
+  const ctx = document.getElementById('analyticsChart');
+  if (!ctx || ctx.dataset.loaded) return;
+  ctx.dataset.loaded = 'true';
+  new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: ['أبريل', 'مايو 1-7', 'مايو 8-14', 'مايو 15-17'],
+      datasets: [
+        { label: 'المشاهدات', data: [8200, 6400, 5800, 4100], backgroundColor: 'rgba(69,183,209,0.7)' },
+        { label: 'الطلبات', data: [320, 280, 250, 180], backgroundColor: 'rgba(255,107,53,0.8)' }
+      ]
+    },
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'top' } } }
+  });
+}
+
+// Load products for dashboard
+async function loadDashProducts() {
+  try {
+    const res = await fetch('tables/products?limit=50');
+    const data = await res.json();
+    dashProducts = data.data || [];
+    renderDashProducts(dashProducts);
+  } catch {
+    document.getElementById('dashProductsBody').innerHTML = '<tr><td colspan="8" style="text-align:center;padding:20px;color:var(--text-light)">تعذر تحميل المنتجات</td></tr>';
+  }
+}
+
+function renderDashProducts(products) {
+  const tbody = document.getElementById('dashProductsBody');
+  if (!products.length) { tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:20px;color:var(--text-light)">لا توجد منتجات</td></tr>'; return; }
+  tbody.innerHTML = products.map(p => `
+    <tr>
+      <td><img src="${p.image_url||'https://placehold.co/50x50/eee/999?text=P'}" style="width:48px;height:48px;object-fit:cover;border-radius:6px;border:1px solid var(--border)" /></td>
+      <td style="font-weight:600;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${p.name_ar||p.name}</td>
+      <td>${p.subcategory || '—'}</td>
+      <td><strong style="color:var(--primary)">$${p.price_min}–$${p.price_max}</strong></td>
+      <td>${p.min_order} ${p.unit||''}</td>
+      <td><span style="color:var(--warning)">★ ${p.rating||4}</span></td>
+      <td><span class="status-badge ${p.in_stock ? 'status-delivered' : 'status-cancelled'}">${p.in_stock ? 'متوفر' : 'غير متوفر'}</span></td>
+      <td style="display:flex;gap:6px">
+        <button class="btn btn-outline" style="padding:4px 10px;font-size:11px" onclick="window.location='product.html?id=${p.id}'"><i class="fas fa-eye"></i></button>
+        <button class="btn btn-outline" style="padding:4px 10px;font-size:11px;color:var(--danger);border-color:var(--danger)" onclick="deleteProduct('${p.id}')"><i class="fas fa-trash"></i></button>
+      </td>
+    </tr>`).join('');
+}
+
+function filterDashProducts() {
+  const q = document.getElementById('productSearch').value.toLowerCase();
+  renderDashProducts(dashProducts.filter(p => (p.name_ar||p.name||'').toLowerCase().includes(q)));
+}
+
+async function deleteProduct(id) {
+  if (!confirm('هل تريد حذف هذا المنتج؟')) return;
+  await fetch(`tables/products/${id}`, { method: 'DELETE' });
+  showToast('تم حذف المنتج', 'info');
+  loadDashProducts();
+}
+
+async function addProduct() {
+  const nameAr = document.getElementById('newProductNameAr').value.trim();
+  const name = document.getElementById('newProductName').value.trim();
+  if (!nameAr || !name) { showToast('يرجى إدخال اسم المنتج', 'error'); return; }
+  const product = {
+    name_ar: nameAr, name, category: document.getElementById('newProductCat').value,
+    subcategory: document.getElementById('newProductSubcat').value,
+    price_min: parseFloat(document.getElementById('newPriceMin').value) || 0,
+    price_max: parseFloat(document.getElementById('newPriceMax').value) || 0,
+    unit: document.getElementById('newUnit').value,
+    min_order: parseInt(document.getElementById('newMinOrder').value) || 1,
+    discount: parseInt(document.getElementById('newDiscount').value) || 0,
+    image_url: document.getElementById('newImage').value,
+    description: document.getElementById('newDescription').value,
+    supplier: 'TechPro Electronics', supplier_country: 'الصين',
+    rating: 4.5, reviews_count: 0, in_stock: true, tags: []
+  };
+  await fetch('tables/products', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(product) });
+  showToast('تم نشر المنتج بنجاح! ✅', 'success');
+  showPage('products');
+  loadDashProducts();
+}
+
+function filterOrders(status, btn) {
+  document.querySelectorAll('#page-orders .cat-tab').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+}
+
+loadDashProducts();
+</script>
+<!-- AI Assistant + PWA Manager -->
+<script src="js/countries.js"></script>
+<script src="js/whatsapp.js"></script>
+<script src="js/chatbot.js"></script>
+</body>
+</html>
+
+<script>
+function generateInquiries() {
+  return `
+    <div style="padding:14px 0;border-bottom:1px solid var(--border)">
+      <div style="display:flex;align-items:start;justify-content:space-between;gap:12px">
+        <div style="display:flex;gap:12px;align-items:start">
+          <div style="width:40px;height:40px;background:var(--primary-light);border-radius:50%;display:flex;align-items:center;justify-content:center;color:var(--primary);font-weight:700;flex-shrink:0">A</div>
+          <div>
+            <strong style="font-size:14px">Ahmed Khalil</strong> <span style="font-size:12px;color:var(--text-light)">| السعودية</span>
+            <p style="font-size:13px;color:var(--text-mid);margin:4px 0">أريد الاستفسار عن سعر 1000 قطعة من السماعات اللاسلكية مع إمكانية الطباعة المخصصة</p>
+            <span style="font-size:11px;color:var(--text-light)">منذ ساعتين</span>
+          </div>
+        </div>
+        <button class="btn btn-primary" style="white-space:nowrap;font-size:12px;padding:6px 14px">رد الآن</button>
+      </div>
+    </div>
+    <div style="padding:14px 0;border-bottom:1px solid var(--border)">
+      <div style="display:flex;align-items:start;justify-content:space-between;gap:12px">
+        <div style="display:flex;gap:12px;align-items:start">
+          <div style="width:40px;height:40px;background:#e3f0ff;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#0984e3;font-weight:700;flex-shrink:0">S</div>
+          <div>
+            <strong style="font-size:14px">Sara Fashion Co.</strong> <span style="font-size:12px;color:var(--text-light)">| الإمارات</span>
+            <p style="font-size:13px;color:var(--text-mid);margin:4px 0">نحتاج 5000 قطعة تيشيرت بالألوان والأحجام التالية، هل يمكن توفير عينة؟</p>
+            <span style="font-size:11px;color:var(--text-light)">منذ 5 ساعات</span>
+          </div>
+        </div>
+        <button class="btn btn-primary" style="white-space:nowrap;font-size:12px;padding:6px 14px">رد الآن</button>
+      </div>
+    </div>`;
+}
+
+function generateNotifications() {
+  const notifs = [
+    { icon: 'fa-shopping-bag', bg: '#fff3ee', color: 'var(--primary)', title: 'طلب جديد #TH-2024-006', body: 'طلب جديد بقيمة $1,200 من مشتري في الكويت', time: 'منذ 10 دقائق', new: true },
+    { icon: 'fa-envelope', bg: '#e3f0ff', color: '#0984e3', title: 'استفسار جديد', body: 'لديك استفسار جديد بشأن منتج السماعات اللاسلكية', time: 'منذ ساعة', new: true },
+    { icon: 'fa-star', bg: '#fff8e1', color: 'var(--warning)', title: 'تقييم جديد', body: 'تلقيت تقييماً جديداً 5 نجوم من عميل في السعودية', time: 'منذ 3 ساعات', new: true },
+    { icon: 'fa-shield-alt', bg: '#e8f8f0', color: 'var(--success)', title: 'تم التحقق من الحساب', body: 'حسابك معتمد الآن كمورد موثوق على المنصة', time: 'منذ يوم', new: false }
+  ];
+  return notifs.map(n => `
+    <div style="display:flex;gap:12px;padding:14px 0;border-bottom:1px solid var(--border);${n.new ? 'background:rgba(255,107,53,0.03);border-radius:8px;padding:14px' : ''}">
+      <div style="width:42px;height:42px;border-radius:50%;background:${n.bg};display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:16px;color:${n.color}">
+        <i class="fas ${n.icon}"></i>
+      </div>
+      <div style="flex:1">
+        <div style="display:flex;align-items:center;gap:8px">
+          <strong style="font-size:13px">${n.title}</strong>
+          ${n.new ? '<span style="background:var(--primary);color:white;font-size:9px;padding:2px 6px;border-radius:10px">جديد</span>' : ''}
+        </div>
+        <p style="font-size:12px;color:var(--text-mid);margin:3px 0">${n.body}</p>
+        <span style="font-size:11px;color:var(--text-light)">${n.time}</span>
+      </div>
+    </div>`).join('');
+}
+</script>
