@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TradeHub Pro - تسجيل الدخول</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        :root {
+            --bg-gradient: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            --card-bg: rgba(30, 41, 59, 0.7);
+            --primary: #38bdf8;
+            --primary-hover: #0ea5e9;
+            --accent: #fbbf24; /* لمحة ذهبية للهيبة */
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --border: rgba(255, 255, 255, 0.08);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Cairo', sans-serif;
+        }
+
+        body {
+            background: var(--bg-gradient);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: var(--text-main);
+            overflow-x: hidden;
+            padding: 20px;
+        }
+
+        /* الكارت الرئيسي للمشروع */
+        .auth-container {
+            background: var(--card-bg);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--border);
+            border-radius: 24px;
+            padding: 40px;
+            width: 100%;
+            max-width: 450px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+            text-align: center;
+            animation: fadeIn 0.6s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .logo {
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--text-main);
+            margin-bottom: 8px;
+            letter-spacing: 1px;
+        }
+
+        .logo span {
+            color: var(--primary);
+        }
+
+        .subtitle {
+            color: var(--text-muted);
+            font-size: 14px;
+            margin-bottom: 30px;
+        }
+
+        /* أزرار اختيار نوع الحساب الجديد */
+        .account-types {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-bottom: 25px;
+        }
+
+        .type-btn {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 12px 5px;
+            color: var(--text-muted);
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .type-btn i {
+            display: block;
+            font-size: 18px;
+            margin-bottom: 6px;
+            color: var(--text-muted);
+        }
+
+        .type-btn:hover, .type-btn.active {
+            border-color: var(--primary);
+            color: var(--text-main);
+            background: rgba(56, 189, 248, 0.1);
+        }
+
+        .type-btn.active i {
+            color: var(--primary);
+        }
+
+        /* الحقول المدخلة */
+        .input-group {
+            margin-bottom: 20px;
+            text-align: right;
+        }
+
+        .input-group label {
+            display: block;
+            font-size: 13px;
+            color: var(--text-muted);
+            margin-bottom: 8px;
+            padding-right: 4px;
+        }
+
+        .input-field {
+            width: 100%;
+            background: rgba(15, 23, 42, 0.6);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 14px 16px;
+            color: var(--text-main);
+            font-size: 15px;
+            transition: all 0.3s ease;
+            text-align: right;
+        }
+
+        .input-field:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.15);
+        }
+
+        /* زر الدخول الرئيسي */
+        .submit-btn {
+            width: 100%;
+            background: var(--primary);
+            color: #0f172a;
+            border: none;
+            border-radius: 12px;
+            padding: 14px;
+            font-size: 16px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 10px;
+        }
+
+        .submit-btn:hover {
+            background: var(--primary-hover);
+            transform: translateY(-1px);
+        }
+
+        /* ---------------------------------- */
+        /* قسم البصمة والوجه (السنتر والأناقة) */
+        /* ---------------------------------- */
+        .biometric-section {
+            margin: 30px 0 15px 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .biometric-title {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-bottom: 15px;
+            position: relative;
+            width: 100%;
+        }
+
+        /* خطوط جانبية حول كلمة "أو الدخول بواسطة" */
+        .biometric-title::before, .biometric-title::after {
+            content: "";
+            position: absolute;
+            top: 50%;
+            width: 25%;
+            height: 1px;
+            background: var(--border);
+        }
+        .biometric-title::before { right: 10%; }
+        .biometric-title::after { left: 10%; }
+
+        .biometric-options {
+            display: flex;
+            gap: 25px;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* أزرار البصمة والوجه الفخمة */
+        .bio-btn {
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            background: rgba(15, 23, 42, 0.8);
+            border: 2px solid var(--border);
+            color: var(--text-muted);
+            font-size: 28px;
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+        }
+
+        /* تأثير التوهج النيون عند التحويم */
+        .bio-btn:hover {
+            color: var(--accent);
+            border-color: var(--accent);
+            box-shadow: 0 0 20px rgba(251, 191, 36, 0.3);
+            transform: scale(1.08);
+        }
+
+        /* تأثير نبض خاص بالبصمة لزيادة الهيبة */
+        .bio-btn.pulse {
+            animation: bioPulse 2s infinite;
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+
+        @keyframes bioPulse {
+            0% { box-shadow: 0 0 0 0 rgba(56, 189, 248, 0.4); }
+            70% { box-shadow: 0 0 0 15px rgba(56, 189, 248, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(56, 189, 248, 0); }
+        }
+
+        .footer-text {
+            margin-top: 25px;
+            font-size: 14px;
+            color: var(--text-muted);
+        }
+
+        .footer-text a {
+            color: var(--primary);
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .footer-text a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="auth-container">
+        <div class="logo">TradeHub <span>Pro</span></div>
+        <div class="subtitle">منصة التجارة الذكية للمستقبل</div>
+
+        <div class="account-types">
+            <button class="type-btn active" onclick="selectType('buyer', this)">
+                <i class="fa-solid fa-cart-shopping"></i>
+                حساب مشترٍ
+            </button>
+            <button class="type-btn" onclick="selectType('company', this)">
+                <i class="fa-solid fa-building"></i>
+                حساب شركة
+            </button>
+            <button class="type-btn" onclick="selectType('client', this)">
+                <i class="fa-solid fa-user-tie"></i>
+                حساب عميل
+            </button>
+        </div>
+
+        <form onsubmit="handleSubmit(event)">
+            <div class="input-group">
+                <label for="email">البريد الإلكتروني أو اسم المستخدم</label>
+                <input type="text" id="email" class="input-field" placeholder="اسمك أو بريدك الإلكتروني" required>
+            </div>
+            
+            <div class="input-group">
+                <label for="password">كلمة المرور</label>
+                <input type="password" id="password" class="input-field" placeholder="••••••••" required>
+            </div>
+
+            <button type="submit" class="submit-btn">تسجيل الدخول الآمن</button>
+        </form>
+
+        <div class="biometric-section">
+            <div class="biometric-title">أو المصادقة الحيوية المشفرة</div>
+            <div class="biometric-options">
+                <button class="bio-btn" title="التعرف على الوجه" onclick="triggerBiometric('FaceID')">
+                    <i class="fa-solid fa-user-shield"></i>
+                </button>
+                <button class="bio-btn pulse" title="بصمة الإصبع" onclick="triggerBiometric('TouchID')">
+                    <i class="fa-solid fa-fingerprint"></i>
+                </button>
+            </div>
+        </div>
+
+        <div class="footer-text">
+            ليس لديك حساب بعد؟ <a href="profile.html">إنشاء حساب جديد</a>
+        </div>
+    </div>
+
+    <script>
+        // دالة لتغيير نوع الحساب المختار
+        let selectedRole = 'buyer';
+        function selectType(role, element) {
+            selectedRole = role;
+            document.querySelectorAll('.type-btn').forEach(btn => btn.classList.remove('active'));
+            element.classList.add('active');
+            console.log("النو�� الحالي المحدد هو: " + selectedRole);
+        }
+
+        // تفاعل عند الضغط على أزرار البصمة أو الوجه
+        function triggerBiometric(type) {
+            if(type === 'TouchID') {
+                alert('جاري قراءة بصمة الإصبع بشكل آمن ومشفّر 100%...');
+            } else {
+                alert('جاري مسح ملامح الوجه الـ 3D للتأكد من الهوية...');
+            }
+        }
+
+        // معالجة إرسال النموذج الأساسي
+        function handleSubmit(event) {
+            event.preventDefault();
+            alert('تم إرسال البيانات للنوع: ' + selectedRole);
+        }
+    </script>
+</body>
+</html>
