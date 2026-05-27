@@ -1,0 +1,680 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>طلباتي - TradeHub Pro</title>
+  <!-- PWA -->
+  <meta name="theme-color" content="#f59e0b" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-title" content="TradeHub Pro" />
+  <link rel="manifest" href="manifest.json" />
+  <link rel="apple-touch-icon" href="icons/icon-192x192.png" />
+  <link rel="icon" type="image/svg+xml" href="icons/icon.svg" />
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" />
+  <link rel="stylesheet" href="css/style.css" />
+
+  <!-- Auth Guard -->
+  <script src="js/auth.js"></script>
+  <script>
+    (function authGuard() {
+      const session = typeof getSession === 'function' ? getSession() : null;
+      if (!session) {
+        window.location.replace('auth.html?mode=login&next=my-orders.html');
+        document.documentElement.style.visibility = 'hidden';
+        return;
+      }
+      const now = Math.floor(Date.now() / 1000);
+      if (session.exp && session.exp < now) {
+        localStorage.removeItem('tradehub_token');
+        window.location.replace('auth.html?mode=login&expired=1&next=my-orders.html');
+        document.documentElement.style.visibility = 'hidden';
+        return;
+      }
+      document.documentElement.style.visibility = 'visible';
+    })();
+  </script>
+
+  <style>
+    .orders-page { padding: 28px 0 60px; }
+
+    /* ── Stats bar ── */
+    .orders-stats { display: grid; grid-template-columns: repeat(4,1fr); gap: 16px; margin-bottom: 28px; }
+    .stat-card {
+      background: white; border: 1px solid var(--border); border-radius: var(--radius-md);
+      padding: 18px; display: flex; align-items: center; gap: 14px;
+      box-shadow: var(--shadow-sm); transition: var(--transition);
+    }
+    .stat-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
+    .stat-icon {
+      width: 48px; height: 48px; border-radius: 12px;
+      display: flex; align-items: center; justify-content: center; font-size: 20px;
+    }
+    .stat-value { font-size: 22px; font-weight: 800; color: var(--text-dark); line-height: 1; }
+    .stat-label { font-size: 12px; color: var(--text-light); margin-top: 2px; }
+
+    /* ── Filters ── */
+    .orders-toolbar {
+      display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+      margin-bottom: 20px; background: white; border: 1px solid var(--border);
+      border-radius: var(--radius-md); padding: 14px 18px; box-shadow: var(--shadow-sm);
+    }
+    .filter-tabs { display: flex; gap: 4px; flex-wrap: wrap; }
+    .filter-tab {
+      padding: 7px 14px; border: 1.5px solid var(--border); border-radius: 20px;
+      background: white; font-size: 13px; font-weight: 600; cursor: pointer;
+      font-family: inherit; color: var(--text-mid); transition: var(--transition);
+    }
+    .filter-tab:hover    { border-color: var(--primary-light); color: var(--primary); }
+    .filter-tab.active   { background: var(--primary); border-color: var(--primary); color: white; }
+    .orders-search { margin-right: auto; position: relative; }
+    .orders-search input {
+      padding: 8px 36px 8px 14px; border: 1.5px solid var(--border);
+      border-radius: 20px; font-family: inherit; font-size: 13px; width: 220px;
+      outline: none; transition: var(--transition);
+    }
+    .orders-search input:focus { border-color: var(--primary); }
+    .orders-search i { position: absolute; top: 50%; transform: translateY(-50%); right: 12px; color: var(--text-light); font-size: 13px; }
+
+    /* ── Order card ── */
+    .order-card {
+      background: white; border: 1px solid var(--border); border-radius: var(--radius-md);
+      overflow: hidden; margin-bottom: 16px; box-shadow: var(--shadow-sm);
+      transition: var(--transition);
+    }
+    .order-card:hover { box-shadow: var(--shadow-md); }
+    .order-card-head {
+      padding: 14px 20px; display: flex; align-items: center; gap: 14px;
+      flex-wrap: wrap; border-bottom: 1px solid var(--border);
+      background: var(--bg-light);
+    }
+    .order-num { font-size: 14px; font-weight: 800; color: var(--text-dark); font-family: monospace; }
+    .order-date { font-size: 12px; color: var(--text-light); }
+    .order-total { margin-right: auto; font-size: 18px; font-weight: 800; color: var(--primary); }
+    .order-card-body { padding: 16px 20px; }
+    .order-items-list { display: flex; flex-direction: column; gap: 10px; }
+    .order-item-row { display: flex; align-items: center; gap: 12px; padding: 8px 0; border-bottom: 1px solid var(--border); }
+    .order-item-row:last-child { border-bottom: none; }
+    .order-item-img { width: 52px; height: 52px; border-radius: 8px; object-fit: cover; flex-shrink: 0; border: 1px solid var(--border); }
+    .order-item-info { flex: 1; min-width: 0; }
+    .order-item-name { font-size: 13px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .order-item-sub { font-size: 12px; color: var(--text-light); }
+    .order-item-price { font-size: 13px; font-weight: 800; color: var(--primary); }
+    .order-card-foot {
+      padding: 12px 20px; border-top: 1px solid var(--border);
+      display: flex; align-items: center; gap: 12px; flex-wrap: wrap; background: #fafafa;
+    }
+    .order-actions { margin-right: auto; display: flex; gap: 8px; }
+    .btn-order-track {
+      padding: 7px 16px; background: var(--primary); color: white; border: none;
+      border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer;
+      font-family: inherit; transition: var(--transition);
+    }
+    .btn-order-track:hover { background: var(--primary-dark); }
+    .btn-order-cancel {
+      padding: 7px 16px; background: white; color: var(--danger);
+      border: 1.5px solid var(--danger); border-radius: 6px;
+      font-size: 13px; font-weight: 600; cursor: pointer;
+      font-family: inherit; transition: var(--transition);
+    }
+    .btn-order-cancel:hover { background: var(--danger); color: white; }
+    .btn-order-reorder {
+      padding: 7px 16px; background: white; color: var(--secondary);
+      border: 1.5px solid var(--secondary); border-radius: 6px;
+      font-size: 13px; font-weight: 600; cursor: pointer;
+      font-family: inherit; transition: var(--transition);
+    }
+    .btn-order-reorder:hover { background: var(--secondary); color: white; }
+
+    /* ── Status badges ── */
+    .status-badge {
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 700;
+    }
+    .status-pending    { background:#fff3cd; color:#856404; }
+    .status-processing { background:#cfe2ff; color:#084298; }
+    .status-shipped    { background:#d1ecf1; color:#0c5460; }
+    .status-delivered  { background:#d4edda; color:#155724; }
+    .status-cancelled  { background:#f8d7da; color:#721c24; }
+    .status-refunded   { background:#e2e3e5; color:#383d41; }
+
+    /* ── Tracking modal ── */
+    .modal-overlay {
+      display: none; position: fixed; inset: 0;
+      background: rgba(0,0,0,0.6); z-index: 9999;
+      align-items: center; justify-content: center; padding: 20px;
+    }
+    .modal-overlay.show { display: flex; }
+    .modal-box {
+      background: white; border-radius: 16px; padding: 28px;
+      max-width: 520px; width: 100%; box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+      max-height: 90vh; overflow-y: auto;
+    }
+    .modal-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+    .modal-head h3 { font-size: 18px; font-weight: 800; }
+    .modal-close { background: none; border: none; font-size: 20px; cursor: pointer; color: var(--text-light); padding: 4px; }
+    .modal-close:hover { color: var(--danger); }
+    /* Tracking timeline */
+    .tracking-timeline { display: flex; flex-direction: column; gap: 0; }
+    .timeline-item {
+      display: flex; gap: 16px; position: relative;
+    }
+    .timeline-item:not(:last-child)::before {
+      content: ''; position: absolute;
+      right: 15px; top: 32px; bottom: -10px;
+      width: 2px; background: var(--border);
+    }
+    .timeline-item.done::before { background: var(--success); }
+    .timeline-dot {
+      width: 32px; height: 32px; border-radius: 50%; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 13px; color: white; margin-top: 4px;
+      border: 2px solid var(--border); background: white;
+    }
+    .timeline-dot.done    { background: var(--success); border-color: var(--success); }
+    .timeline-dot.active  { background: var(--primary); border-color: var(--primary); animation: pulse 1.5s infinite; }
+    .timeline-dot.pending { background: #e2e8f0; border-color: var(--border); color: var(--text-light); }
+    @keyframes pulse { 0%,100%{box-shadow:0 0 0 0 rgba(255,107,53,0.4)} 50%{box-shadow:0 0 0 8px rgba(255,107,53,0)} }
+    .timeline-content { flex: 1; padding-bottom: 20px; }
+    .timeline-title { font-size: 14px; font-weight: 700; }
+    .timeline-desc  { font-size: 12px; color: var(--text-light); margin-top: 2px; }
+    .timeline-time  { font-size: 11px; color: var(--text-light); margin-top: 4px; }
+
+    /* ── Empty state ── */
+    .orders-empty {
+      text-align: center; padding: 60px 20px;
+      background: white; border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+    }
+    .orders-empty i { font-size: 56px; color: var(--border); margin-bottom: 16px; display: block; }
+    .orders-empty h3 { font-size: 18px; font-weight: 800; color: var(--text-mid); margin-bottom: 8px; }
+    .orders-empty p { font-size: 14px; color: var(--text-light); margin-bottom: 20px; }
+
+    /* ── Loading ── */
+    .orders-loading { text-align: center; padding: 40px; color: var(--text-light); }
+    .spinner-large { width: 40px; height: 40px; border: 3px solid var(--border); border-top-color: var(--primary); border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 16px; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── Responsive ── */
+    @media (max-width: 900px) {
+      .orders-stats { grid-template-columns: repeat(2,1fr); }
+    }
+    @media (max-width: 600px) {
+      .orders-stats { grid-template-columns: 1fr 1fr; }
+      .order-card-head { gap: 8px; }
+      .order-total { font-size: 15px; }
+      .orders-search input { width: 140px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ═══════════════════════════ HEADER ═══════════════════════════ -->
+<header class="header">
+  <div class="container">
+    <a href="index.html" class="logo">
+      <span class="logo-dynamic">
+        <div class="logo-icon"><i class="fas fa-globe-asia"></i></div>
+        Trade<span>Hub</span>
+      </span>
+    </a>
+    <nav class="header-nav" aria-label="التنقل الرئيسي">
+      <a href="products.html"><i class="fas fa-th-large"></i> المنتجات</a>
+      <a href="cart.html"><i class="fas fa-shopping-cart"></i> السلة</a>
+      <a href="my-orders.html" class="active"><i class="fas fa-box"></i> طلباتي</a>
+    </nav>
+    <div id="headerUserMenu"></div>
+  </div>
+</header>
+
+<div class="toast-container" id="toastContainer"></div>
+
+<main class="orders-page">
+  <div class="container">
+
+    <!-- Page header -->
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;flex-wrap:wrap;gap:12px">
+      <div>
+        <h1 style="font-size:22px;font-weight:800;color:var(--text-dark)">
+          <i class="fas fa-box" style="color:var(--primary)"></i> سجل طلباتي
+        </h1>
+        <p style="font-size:13px;color:var(--text-light)" id="userGreeting">تتبع وإدارة جميع طلباتك</p>
+      </div>
+      <a href="products.html" class="btn btn-primary">
+        <i class="fas fa-shopping-bag"></i> تسوق الآن
+      </a>
+    </div>
+
+    <!-- Stats -->
+    <div class="orders-stats" id="statsBar">
+      <div class="stat-card">
+        <div class="stat-icon" style="background:linear-gradient(135deg,#eff6ff,#dbeafe)">
+          <i class="fas fa-box" style="color:#3b82f6"></i>
+        </div>
+        <div>
+          <div class="stat-value" id="statTotal">—</div>
+          <div class="stat-label">إجمالي الطلبات</div>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon" style="background:linear-gradient(135deg,#fef3c7,#fde68a)">
+          <i class="fas fa-clock" style="color:#d97706"></i>
+        </div>
+        <div>
+          <div class="stat-value" id="statPending">—</div>
+          <div class="stat-label">قيد المعالجة</div>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon" style="background:linear-gradient(135deg,#d1fae5,#a7f3d0)">
+          <i class="fas fa-check-circle" style="color:#10b981"></i>
+        </div>
+        <div>
+          <div class="stat-value" id="statDelivered">—</div>
+          <div class="stat-label">مُسلَّمة</div>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon" style="background:linear-gradient(135deg,#fce7f3,#fbcfe8)">
+          <i class="fas fa-dollar-sign" style="color:#db2777"></i>
+        </div>
+        <div>
+          <div class="stat-value" id="statSpent">—</div>
+          <div class="stat-label">إجمالي الإنفاق</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Toolbar -->
+    <div class="orders-toolbar">
+      <div class="filter-tabs" id="statusFilters">
+        <button class="filter-tab active" onclick="filterOrders('all',this)">الكل</button>
+        <button class="filter-tab" onclick="filterOrders('pending',this)">
+          <i class="fas fa-hourglass-half"></i> انتظار
+        </button>
+        <button class="filter-tab" onclick="filterOrders('processing',this)">
+          <i class="fas fa-cog"></i> جارٍ
+        </button>
+        <button class="filter-tab" onclick="filterOrders('shipped',this)">
+          <i class="fas fa-shipping-fast"></i> شُحن
+        </button>
+        <button class="filter-tab" onclick="filterOrders('delivered',this)">
+          <i class="fas fa-check-circle"></i> مُسلَّم
+        </button>
+        <button class="filter-tab" onclick="filterOrders('cancelled',this)">
+          <i class="fas fa-times-circle"></i> ملغي
+        </button>
+      </div>
+      <div class="orders-search">
+        <i class="fas fa-search"></i>
+        <input type="text" id="orderSearch" placeholder="بحث برقم الطلب..."
+               oninput="searchOrders(this.value)" />
+      </div>
+    </div>
+
+    <!-- Orders list -->
+    <div id="ordersList">
+      <div class="orders-loading">
+        <div class="spinner-large"></div>
+        <p>جارٍ تحميل طلباتك...</p>
+      </div>
+    </div>
+
+  </div><!-- /container -->
+</main>
+
+<!-- ══ TRACKING MODAL ══ -->
+<div class="modal-overlay" id="trackingModal">
+  <div class="modal-box">
+    <div class="modal-head">
+      <h3><i class="fas fa-map-marker-alt" style="color:var(--primary)"></i> تتبع الطلب</h3>
+      <button class="modal-close" onclick="closeTrackingModal()"><i class="fas fa-times"></i></button>
+    </div>
+    <div id="trackingModalContent">
+      <!-- filled by JS -->
+    </div>
+  </div>
+</div>
+
+<script src="js/main.js"></script>
+<script>
+/* ═══════════════════════════════════════════════════════
+   my-orders.html — order history & tracking
+═══════════════════════════════════════════════════════ */
+
+'use strict';
+
+let _session   = null;
+let _allOrders = [];
+let _orderItems = {}; // orderId → items[]
+let _filteredOrders = [];
+let _activeFilter   = 'all';
+
+// ── Status config ──────────────────────────────────────
+const STATUS_CONFIG = {
+  pending:    { label:'في الانتظار',    icon:'fas fa-hourglass-half', cls:'status-pending'    },
+  processing: { label:'جارٍ المعالجة', icon:'fas fa-cog fa-spin',    cls:'status-processing' },
+  shipped:    { label:'تم الشحن',      icon:'fas fa-shipping-fast',  cls:'status-shipped'    },
+  delivered:  { label:'تم التسليم',    icon:'fas fa-check-circle',   cls:'status-delivered'  },
+  cancelled:  { label:'ملغي',          icon:'fas fa-times-circle',   cls:'status-cancelled'  },
+  refunded:   { label:'مُسترجَع',      icon:'fas fa-undo',           cls:'status-refunded'   }
+};
+
+const TRACKING_STEPS = [
+  { key:'placed',    label:'تم استلام الطلب',    desc:'تم تأكيد طلبك بنجاح',           icon:'fas fa-receipt'     },
+  { key:'processing',label:'جارٍ المعالجة',      desc:'البائع يجهّز طلبك',             icon:'fas fa-cog'         },
+  { key:'shipped',   label:'تم الشحن',           desc:'طلبك في طريقه إليك',            icon:'fas fa-shipping-fast'},
+  { key:'delivered', label:'تم التسليم',         desc:'تم توصيل طلبك بنجاح',           icon:'fas fa-check-circle'}
+];
+
+function getTrackingStepIndex(status) {
+  const map = { pending:0, processing:1, shipped:2, delivered:3, cancelled:-1 };
+  return map[status] ?? 0;
+}
+
+// ── Init ──────────────────────────────────────────────
+(async function init() {
+  _session = typeof getSession === 'function' ? getSession() : null;
+  if (!_session) return;
+
+  const greeting = document.getElementById('userGreeting');
+  if (greeting) greeting.textContent = `مرحباً ${_session.name} — تتبع وإدارة جميع طلباتك`;
+
+  await loadOrders();
+})();
+
+// ── Load orders ───────────────────────────────────────
+async function loadOrders() {
+  try {
+    const res  = await fetch(`tables/orders?limit=200&sort=created_at`);
+    const data = await res.json();
+    let orders = data.data || [];
+
+    // Filter by current user
+    if (_session?.sub) {
+      orders = orders.filter(o => o.user_id === _session.sub);
+    }
+    // Sort by newest first
+    orders.sort((a,b) => (b.created_at||'').localeCompare(a.created_at||''));
+    _allOrders = orders;
+
+    updateStats(orders);
+    applyFilter(_activeFilter);
+
+    // Load items for all orders in parallel (batch, max 5 concurrent)
+    await loadAllOrderItems(orders.slice(0,20));
+    renderOrdersList(_filteredOrders);
+
+  } catch (err) {
+    console.error('[MyOrders] loadOrders error:', err);
+    document.getElementById('ordersList').innerHTML =
+      '<p style="text-align:center;padding:40px;color:var(--text-light)">تعذر تحميل الطلبات</p>';
+  }
+}
+
+async function loadAllOrderItems(orders) {
+  try {
+    const res  = await fetch(`tables/order_items?limit=500`);
+    const data = await res.json();
+    const items = data.data || [];
+    // Group by order_id
+    _orderItems = {};
+    items.forEach(item => {
+      if (!_orderItems[item.order_id]) _orderItems[item.order_id] = [];
+      _orderItems[item.order_id].push(item);
+    });
+  } catch { /* non-critical */ }
+}
+
+function updateStats(orders) {
+  const total     = orders.length;
+  const pending   = orders.filter(o => ['pending','processing','shipped'].includes(o.status)).length;
+  const delivered = orders.filter(o => o.status === 'delivered').length;
+  const spent     = orders.filter(o => o.status !== 'cancelled').reduce((s,o) => s + (parseFloat(o.total||0)), 0);
+  document.getElementById('statTotal').textContent     = total;
+  document.getElementById('statPending').textContent   = pending;
+  document.getElementById('statDelivered').textContent = delivered;
+  document.getElementById('statSpent').textContent     = `$${spent.toFixed(0)}`;
+}
+
+// ── Filtering ─────────────────────────────────────────
+function filterOrders(status, btn) {
+  _activeFilter = status;
+  document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  applyFilter(status);
+  renderOrdersList(_filteredOrders);
+}
+
+function applyFilter(status) {
+  if (status === 'all') {
+    _filteredOrders = [..._allOrders];
+  } else {
+    _filteredOrders = _allOrders.filter(o => o.status === status);
+  }
+}
+
+function searchOrders(q) {
+  const query = q.toLowerCase().trim();
+  if (!query) {
+    applyFilter(_activeFilter);
+  } else {
+    _filteredOrders = _allOrders.filter(o =>
+      (o.order_number||'').toLowerCase().includes(query) ||
+      (o.status||'').toLowerCase().includes(query)
+    );
+  }
+  renderOrdersList(_filteredOrders);
+}
+
+// ── Render ────────────────────────────────────────────
+function renderOrdersList(orders) {
+  const container = document.getElementById('ordersList');
+  if (!orders.length) {
+    container.innerHTML = `
+      <div class="orders-empty">
+        <i class="fas fa-box-open"></i>
+        <h3>${_activeFilter === 'all' ? 'لا توجد طلبات بعد' : 'لا توجد طلبات بهذه الحالة'}</h3>
+        <p>${_activeFilter === 'all' ? 'ابدأ تسوقك وستظهر طلباتك هنا' : 'جرّب تصفية مختلفة'}</p>
+        ${_activeFilter === 'all' ? '<a href="products.html" class="btn btn-primary"><i class="fas fa-shopping-bag"></i> تسوق الآن</a>' : ''}
+      </div>`;
+    return;
+  }
+
+  container.innerHTML = orders.map(order => renderOrderCard(order)).join('');
+}
+
+function renderOrderCard(order) {
+  const st  = STATUS_CONFIG[order.status] || STATUS_CONFIG.pending;
+  const items = _orderItems[order.id] || [];
+  const dateStr = order.created_at ? new Date(order.created_at).toLocaleDateString('ar-SA', { year:'numeric', month:'long', day:'numeric' }) : '';
+  const canCancel = ['pending','processing'].includes(order.status);
+
+  const itemsHtml = items.length
+    ? items.slice(0,3).map(item => `
+        <div class="order-item-row">
+          <img src="${item.product_image || 'https://placehold.co/52x52/eee/999?text=P'}"
+               class="order-item-img" alt="${item.product_name||''}" />
+          <div class="order-item-info">
+            <div class="order-item-name">${item.product_name || 'منتج'}</div>
+            <div class="order-item-sub">× ${item.quantity||1} &nbsp;|&nbsp; ${item.supplier||''}</div>
+          </div>
+          <div class="order-item-price">$${parseFloat(item.total_price||0).toFixed(2)}</div>
+        </div>`).join('')
+    : `<div style="font-size:13px;color:var(--text-light);padding:8px 0">
+         <i class="fas fa-box"></i> ${order.order_number} — ${order.payment_method||''}
+       </div>`;
+
+  const moreItems = items.length > 3
+    ? `<div style="font-size:12px;color:var(--text-light);padding:8px 0;text-align:center">
+        + ${items.length - 3} منتج(ات) أخرى
+       </div>` : '';
+
+  return `
+    <article class="order-card">
+      <div class="order-card-head">
+        <div>
+          <div class="order-num"><i class="fas fa-hashtag" style="color:var(--primary)"></i> ${order.order_number || order.id?.slice(0,8)}</div>
+          <div class="order-date"><i class="far fa-calendar-alt"></i> ${dateStr}</div>
+        </div>
+        <span class="status-badge ${st.cls}">
+          <i class="${st.icon}"></i> ${st.label}
+        </span>
+        <div class="order-total">$${parseFloat(order.total||0).toFixed(2)}</div>
+      </div>
+
+      <div class="order-card-body">
+        <div class="order-items-list">
+          ${itemsHtml}
+          ${moreItems}
+        </div>
+        ${order.tracking_number ? `
+        <div style="margin-top:10px;padding:8px 12px;background:#f0fdf4;border-radius:8px;font-size:12px;color:#166534;display:flex;align-items:center;gap:8px">
+          <i class="fas fa-barcode"></i>
+          <span>رقم التتبع: <strong style="font-family:monospace">${order.tracking_number}</strong></span>
+        </div>` : ''}
+      </div>
+
+      <div class="order-card-foot">
+        <div style="font-size:12px;color:var(--text-light)">
+          <i class="fas fa-credit-card"></i> ${order.payment_method || '—'}
+        </div>
+        <div style="font-size:12px;color:var(--text-light)">
+          <i class="fas fa-shipping-fast"></i> ${order.estimated_delivery || '—'}
+        </div>
+        <div class="order-actions">
+          <button class="btn-order-track" onclick="openTrackingModal('${order.id}')">
+            <i class="fas fa-map-marker-alt"></i> تتبع
+          </button>
+          ${canCancel ? `<button class="btn-order-cancel" onclick="cancelOrder('${order.id}','${order.order_number||''}')">
+            <i class="fas fa-times"></i> إلغاء
+          </button>` : ''}
+          ${order.status === 'delivered' ? `<button class="btn-order-reorder" onclick="reorder('${order.id}')">
+            <i class="fas fa-redo"></i> إعادة الطلب
+          </button>` : ''}
+        </div>
+      </div>
+    </article>`;
+}
+
+// ── Tracking Modal ────────────────────────────────────
+async function openTrackingModal(orderId) {
+  const order = _allOrders.find(o => o.id === orderId);
+  if (!order) return;
+  const items  = _orderItems[orderId] || [];
+  const st     = STATUS_CONFIG[order.status] || STATUS_CONFIG.pending;
+  const stepIdx = getTrackingStepIndex(order.status);
+  const dateStr = order.created_at ? new Date(order.created_at).toLocaleDateString('ar-SA', { year:'numeric', month:'long', day:'numeric' }) : '';
+  const isCancelled = order.status === 'cancelled';
+
+  const timelineHtml = isCancelled
+    ? `<div style="text-align:center;padding:24px;color:var(--danger)">
+        <i class="fas fa-times-circle fa-3x" style="margin-bottom:12px"></i>
+        <div style="font-size:16px;font-weight:800">تم إلغاء هذا الطلب</div>
+       </div>`
+    : TRACKING_STEPS.map((step, i) => {
+        const state = i < stepIdx ? 'done' : (i === stepIdx ? 'active' : 'pending');
+        const time  = i === 0 ? dateStr : (i <= stepIdx ? 'تم' : 'قريباً');
+        return `
+          <div class="timeline-item ${state}">
+            <div class="timeline-dot ${state}">
+              <i class="${step.icon}"></i>
+            </div>
+            <div class="timeline-content">
+              <div class="timeline-title" style="${state==='active'?'color:var(--primary)':''}">${step.label}</div>
+              <div class="timeline-desc">${step.desc}</div>
+              <div class="timeline-time">${time}</div>
+            </div>
+          </div>`;
+      }).join('');
+
+  document.getElementById('trackingModalContent').innerHTML = `
+    <div style="margin-bottom:20px;padding:14px;background:var(--bg-light);border-radius:10px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+        <span style="font-size:14px;font-weight:800;font-family:monospace">${order.order_number || order.id?.slice(0,8)}</span>
+        <span class="status-badge ${st.cls}"><i class="${st.icon}"></i> ${st.label}</span>
+      </div>
+      <div style="font-size:13px;color:var(--text-light)">${dateStr} &nbsp;|&nbsp; $${parseFloat(order.total||0).toFixed(2)}</div>
+      ${order.tracking_number ? `<div style="margin-top:8px;font-size:12px;color:var(--success)"><i class="fas fa-barcode"></i> التتبع: <strong>${order.tracking_number}</strong></div>` : ''}
+    </div>
+    <div class="tracking-timeline">
+      ${timelineHtml}
+    </div>
+    ${items.length ? `
+    <div style="margin-top:20px;padding-top:16px;border-top:1px solid var(--border)">
+      <div style="font-size:13px;font-weight:700;margin-bottom:10px;color:var(--text-mid)">المنتجات</div>
+      ${items.map(item=>`
+        <div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--border)">
+          <img src="${item.product_image||'https://placehold.co/40x40/eee/999?text=P'}" style="width:40px;height:40px;border-radius:6px;object-fit:cover"/>
+          <div style="flex:1;font-size:13px">${item.product_name||'منتج'} <span style="color:var(--text-light)">×${item.quantity||1}</span></div>
+          <div style="font-size:13px;font-weight:700;color:var(--primary)">$${parseFloat(item.total_price||0).toFixed(2)}</div>
+        </div>`).join('')}
+    </div>` : ''}`;
+
+  document.getElementById('trackingModal').classList.add('show');
+}
+
+function closeTrackingModal() {
+  document.getElementById('trackingModal').classList.remove('show');
+}
+
+// Close modal on overlay click
+document.getElementById('trackingModal').addEventListener('click', function(e) {
+  if (e.target === this) closeTrackingModal();
+});
+
+// ── Cancel Order ──────────────────────────────────────
+async function cancelOrder(orderId, orderNum) {
+  if (!confirm(`هل أنت متأكد من إلغاء الطلب ${orderNum}؟`)) return;
+  try {
+    await fetch(`tables/orders/${orderId}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status: 'cancelled', updated_at: new Date().toISOString() })
+    });
+    showToast(`تم إلغاء الطلب ${orderNum}`, 'success');
+    await loadOrders();
+  } catch {
+    showToast('حدث خطأ أثناء إلغاء الطلب', 'error');
+  }
+}
+
+// ── Reorder ───────────────────────────────────────────
+async function reorder(orderId) {
+  const items = _orderItems[orderId] || [];
+  if (!items.length) {
+    showToast('لا يمكن إعادة الطلب — لا توجد منتجات', 'error');
+    return;
+  }
+  try {
+    for (const item of items) {
+      if (item.product_id) {
+        await fetch('tables/cart', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            user_id:      _session?.sub || '',
+            product_id:   item.product_id,
+            product_name: item.product_name,
+            image_url:    item.product_image || '',
+            price:        item.unit_price,
+            quantity:     item.quantity,
+            supplier:     item.supplier || ''
+          })
+        });
+      }
+    }
+    showToast(`تمت إضافة ${items.length} منتج للسلة ✅`, 'success');
+    setTimeout(() => window.location.href = 'cart.html', 1200);
+  } catch {
+    showToast('حدث خطأ أثناء إضافة المنتجات للسلة', 'error');
+  }
+}
+</script>
+<!-- AI Assistant + PWA Manager -->
+<script src="js/countries.js"></script>
+<script src="js/whatsapp.js"></script>
+<script src="js/chatbot.js"></script>
+</body>
+</html>

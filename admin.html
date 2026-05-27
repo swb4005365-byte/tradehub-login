@@ -1,0 +1,3133 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>لوحة المدير العام - TradeHub Pro</title>
+  <!-- PWA -->
+  <meta name="theme-color" content="#f59e0b" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-title" content="TradeHub Pro" />
+  <link rel="manifest" href="manifest.json" />
+  <link rel="apple-touch-icon" href="icons/icon-192x192.png" />
+  <link rel="icon" type="image/svg+xml" href="icons/icon.svg" />
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;800;900&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+  /* ============================================
+     TradeHub Pro — Super Admin Panel
+  ============================================ */
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+  :root {
+    --primary: #FF6B35; --primary-glow: rgba(255,107,53,0.18);
+    --gold: #f59e0b; --gold-glow: rgba(245,158,11,0.18);
+    --success: #10b981; --danger: #ef4444; --info: #3b82f6; --warning: #f59e0b; --purple: #8b5cf6;
+    --bg: #0a0e1a; --surface: #111827; --card: #1a2235; --card2: #1e2a42;
+    --border: rgba(255,255,255,0.07); --border2: rgba(255,255,255,0.12);
+    --text: #e2e8f0; --muted: #64748b; --light: #94a3b8;
+    --sidebar-w: 260px;
+    --radius: 12px; --radius-lg: 18px;
+    --shadow: 0 4px 24px rgba(0,0,0,0.35);
+    --transition: all 0.25s cubic-bezier(0.4,0,0.2,1);
+  }
+  html { scroll-behavior: smooth; }
+  body { font-family: 'Cairo', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; overflow-x: hidden; }
+  a { text-decoration: none; color: inherit; }
+  button { cursor: pointer; font-family: inherit; }
+  input, select, textarea { font-family: inherit; }
+  ::-webkit-scrollbar { width: 5px; height: 5px; }
+  ::-webkit-scrollbar-track { background: var(--surface); }
+  ::-webkit-scrollbar-thumb { background: rgba(255,107,53,0.4); border-radius: 3px; }
+
+  /* ===== LAYOUT ===== */
+  .admin-layout { display: flex; min-height: 100vh; }
+
+  /* ===== SIDEBAR ===== */
+  .admin-sidebar {
+    width: var(--sidebar-w); background: var(--surface);
+    border-left: 1px solid var(--border);
+    display: flex; flex-direction: column;
+    position: fixed; top: 0; right: 0; bottom: 0; z-index: 200;
+    transition: var(--transition);
+  }
+  .sidebar-header {
+    padding: 20px 20px 16px;
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; gap: 12px;
+  }
+  .sidebar-logo {
+    width: 42px; height: 42px; border-radius: 10px;
+    background: linear-gradient(135deg, var(--primary), var(--gold));
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px; color: white; flex-shrink: 0;
+    box-shadow: 0 4px 12px var(--primary-glow);
+  }
+  .sidebar-brand { font-size: 16px; font-weight: 800; color: white; line-height: 1.2; }
+  .sidebar-brand small { font-size: 10px; color: var(--gold); font-weight: 600; display: block; letter-spacing: 1px; text-transform: uppercase; }
+
+  .sidebar-admin-info {
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; gap: 10px;
+  }
+  .admin-avatar {
+    width: 40px; height: 40px; border-radius: 50%;
+    background: linear-gradient(135deg, var(--primary), var(--gold));
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px; font-weight: 800; color: white;
+    box-shadow: 0 0 0 2px var(--primary-glow); flex-shrink: 0;
+  }
+  .admin-info-text { min-width: 0; }
+  .admin-info-name { font-size: 13px; font-weight: 700; color: white; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .admin-info-role {
+    font-size: 10px; font-weight: 700; color: var(--gold);
+    background: var(--gold-glow); padding: 2px 8px; border-radius: 20px;
+    display: inline-block; margin-top: 2px; letter-spacing: 0.5px;
+  }
+  .online-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--success); margin-right: auto; animation: blink 2s infinite; flex-shrink: 0; }
+  @keyframes blink { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
+
+  .sidebar-nav { flex: 1; overflow-y: auto; padding: 12px 0; }
+  .nav-section-title { padding: 10px 20px 4px; font-size: 9px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 1.2px; }
+  .nav-item {
+    display: flex; align-items: center; gap: 12px;
+    padding: 10px 20px; color: var(--muted); font-size: 13px; font-weight: 600;
+    transition: var(--transition); cursor: pointer; position: relative;
+    border: none; background: none; width: 100%; text-align: right;
+  }
+  .nav-item:hover { color: var(--text); background: rgba(255,255,255,0.04); }
+  .nav-item.active { color: var(--primary); background: var(--primary-glow); }
+  .nav-item.active::after { content: ''; position: absolute; right: 0; top: 20%; bottom: 20%; width: 3px; background: var(--primary); border-radius: 2px 0 0 2px; }
+  .nav-item i { font-size: 16px; width: 20px; text-align: center; flex-shrink: 0; }
+  .nav-badge { margin-right: auto; font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 20px; }
+  .nav-badge.red { background: rgba(239,68,68,0.15); color: var(--danger); }
+  .nav-badge.orange { background: var(--primary-glow); color: var(--primary); }
+  .nav-badge.green { background: rgba(16,185,129,0.12); color: var(--success); }
+
+  .sidebar-footer {
+    padding: 16px 20px;
+    border-top: 1px solid var(--border);
+    display: flex; gap: 8px;
+  }
+  .footer-btn {
+    flex: 1; padding: 9px; border-radius: 8px;
+    border: 1px solid var(--border); background: transparent;
+    color: var(--muted); font-size: 13px; transition: var(--transition);
+    display: flex; align-items: center; justify-content: center; gap: 6px;
+  }
+  .footer-btn:hover { border-color: var(--primary); color: var(--primary); background: var(--primary-glow); }
+  .footer-btn.danger:hover { border-color: var(--danger); color: var(--danger); background: rgba(239,68,68,0.1); }
+
+  /* ===== TOP BAR ===== */
+  .admin-topbar {
+    position: fixed; top: 0; right: var(--sidebar-w); left: 0; height: 64px;
+    background: rgba(17,24,39,0.92); backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; padding: 0 24px; gap: 16px; z-index: 100;
+  }
+  .topbar-title { font-size: 18px; font-weight: 800; color: white; flex: 1; }
+  .topbar-title span { color: var(--primary); }
+  .topbar-actions { display: flex; align-items: center; gap: 8px; }
+  .topbar-btn {
+    width: 38px; height: 38px; border-radius: 10px;
+    border: 1px solid var(--border); background: rgba(255,255,255,0.04);
+    color: var(--muted); font-size: 16px; display: flex; align-items: center; justify-content: center;
+    transition: var(--transition); position: relative;
+  }
+  .topbar-btn:hover { border-color: var(--primary); color: var(--primary); background: var(--primary-glow); }
+  .topbar-notif { background: var(--danger); color: white; font-size: 9px; font-weight: 700; width: 16px; height: 16px; border-radius: 50%; position: absolute; top: -4px; left: -4px; display: flex; align-items: center; justify-content: center; }
+  .topbar-time { font-size: 12px; color: var(--muted); background: rgba(255,255,255,0.04); padding: 6px 12px; border-radius: 8px; border: 1px solid var(--border); }
+
+  /* ===== MAIN CONTENT ===== */
+  .admin-main { margin-right: var(--sidebar-w); margin-top: 64px; padding: 28px; min-height: calc(100vh - 64px); }
+  .admin-page { display: none; animation: fadeIn 0.3s ease; }
+  .admin-page.active { display: block; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+  /* ===== PAGE HEADER ===== */
+  .page-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 28px; flex-wrap: wrap; gap: 12px; }
+  .page-title { font-size: 24px; font-weight: 900; color: white; display: flex; align-items: center; gap: 12px; }
+  .page-title-icon { width: 46px; height: 46px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 20px; }
+  .page-actions { display: flex; gap: 10px; align-items: center; }
+
+  /* ===== KPI CARDS ===== */
+  .kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; }
+  .kpi-card {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: var(--radius-lg); padding: 22px;
+    position: relative; overflow: hidden; transition: var(--transition);
+  }
+  .kpi-card:hover { transform: translateY(-2px); box-shadow: var(--shadow); border-color: var(--border2); }
+  .kpi-card::before { content: ''; position: absolute; inset: 0; background: linear-gradient(135deg, transparent 60%, rgba(255,255,255,0.02)); pointer-events: none; }
+  .kpi-top { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 14px; }
+  .kpi-icon-wrap { width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 22px; }
+  .kpi-trend { display: flex; align-items: center; gap: 4px; font-size: 12px; font-weight: 700; padding: 4px 8px; border-radius: 20px; }
+  .kpi-trend.up { color: var(--success); background: rgba(16,185,129,0.1); }
+  .kpi-trend.down { color: var(--danger); background: rgba(239,68,68,0.1); }
+  .kpi-value { font-size: 30px; font-weight: 900; color: white; line-height: 1; margin-bottom: 6px; }
+  .kpi-label { font-size: 13px; color: var(--muted); }
+  .kpi-bar { height: 3px; background: var(--border); border-radius: 2px; margin-top: 14px; overflow: hidden; }
+  .kpi-bar-fill { height: 100%; border-radius: 2px; transition: width 1s ease; }
+
+  /* ===== CHARTS ===== */
+  .charts-row { display: grid; grid-template-columns: 2fr 1fr; gap: 16px; margin-bottom: 24px; }
+  .chart-card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 22px; }
+  .chart-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; flex-wrap: wrap; gap: 8px; }
+  .chart-title { font-size: 15px; font-weight: 700; color: white; display: flex; align-items: center; gap: 8px; }
+  .chart-title i { color: var(--primary); }
+  .chart-tabs { display: flex; gap: 4px; }
+  .chart-tab { padding: 5px 12px; border-radius: 6px; font-size: 12px; font-weight: 600; border: 1px solid var(--border); background: transparent; color: var(--muted); cursor: pointer; transition: var(--transition); }
+  .chart-tab.active { background: var(--primary); border-color: var(--primary); color: white; }
+  .chart-wrap { height: 240px; position: relative; }
+
+  /* ===== TABLES ===== */
+  .admin-table-wrap { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; }
+  .table-header { padding: 18px 20px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border); gap: 12px; flex-wrap: wrap; }
+  .table-title { font-size: 15px; font-weight: 700; color: white; display: flex; align-items: center; gap: 8px; }
+  .table-controls { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .tbl-search { padding: 8px 14px; background: rgba(255,255,255,0.05); border: 1px solid var(--border); border-radius: 8px; color: var(--text); font-size: 13px; outline: none; transition: var(--transition); min-width: 200px; }
+  .tbl-search:focus { border-color: var(--primary); background: rgba(255,107,53,0.05); }
+  .tbl-search::placeholder { color: var(--muted); }
+  .tbl-select { padding: 8px 12px; background: rgba(255,255,255,0.05); border: 1px solid var(--border); border-radius: 8px; color: var(--text); font-size: 13px; outline: none; cursor: pointer; }
+  .tbl-select option { background: var(--card); }
+  .data-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .data-table th { padding: 12px 16px; text-align: right; font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid var(--border); background: rgba(255,255,255,0.02); white-space: nowrap; }
+  .data-table td { padding: 14px 16px; border-bottom: 1px solid rgba(255,255,255,0.04); vertical-align: middle; }
+  .data-table tbody tr:hover td { background: rgba(255,255,255,0.03); }
+  .data-table tbody tr:last-child td { border-bottom: none; }
+  .tbl-pagination { padding: 14px 20px; display: flex; align-items: center; justify-content: space-between; border-top: 1px solid var(--border); font-size: 12px; color: var(--muted); }
+  .page-btns { display: flex; gap: 4px; }
+  .page-btn { width: 30px; height: 30px; border-radius: 6px; border: 1px solid var(--border); background: transparent; color: var(--muted); font-size: 12px; cursor: pointer; transition: var(--transition); display: flex; align-items: center; justify-content: center; }
+  .page-btn:hover, .page-btn.active { border-color: var(--primary); color: var(--primary); background: var(--primary-glow); }
+
+  /* ===== STATUS BADGES ===== */
+  .badge { padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; white-space: nowrap; }
+  .badge-active { background: rgba(16,185,129,0.12); color: var(--success); }
+  .badge-pending { background: rgba(245,158,11,0.12); color: var(--warning); }
+  .badge-suspended { background: rgba(239,68,68,0.12); color: var(--danger); }
+  .badge-banned { background: rgba(239,68,68,0.2); color: var(--danger); border: 1px solid rgba(239,68,68,0.3); }
+  .badge-verified { background: rgba(59,130,246,0.12); color: var(--info); }
+  .badge-shipped { background: rgba(139,92,246,0.12); color: var(--purple); }
+  .badge-delivered { background: rgba(16,185,129,0.12); color: var(--success); }
+  .badge-processing { background: rgba(59,130,246,0.12); color: var(--info); }
+  .badge-cancelled { background: rgba(239,68,68,0.12); color: var(--danger); }
+  .badge-refunded { background: rgba(245,158,11,0.12); color: var(--warning); }
+  .badge-open { background: rgba(239,68,68,0.12); color: var(--danger); }
+  .badge-reviewing { background: rgba(245,158,11,0.12); color: var(--warning); }
+  .badge-resolved { background: rgba(16,185,129,0.12); color: var(--success); }
+  .badge-dismissed { background: rgba(255,255,255,0.05); color: var(--muted); }
+  .badge-critical { background: rgba(239,68,68,0.25); color: var(--danger); border: 1px solid rgba(239,68,68,0.4); }
+  .badge-high { background: rgba(245,158,11,0.15); color: var(--warning); }
+  .badge-medium { background: rgba(59,130,246,0.12); color: var(--info); }
+  .badge-low { background: rgba(255,255,255,0.05); color: var(--muted); }
+  .badge-buyer { background: rgba(59,130,246,0.12); color: var(--info); }
+  .badge-seller { background: rgba(139,92,246,0.12); color: var(--purple); }
+  .badge-admin { background: rgba(245,158,11,0.15); color: var(--gold); }
+
+  /* ===== ACTION BUTTONS ===== */
+  .action-btns { display: flex; gap: 5px; }
+  .act-btn { width: 30px; height: 30px; border-radius: 7px; border: 1px solid var(--border); background: transparent; color: var(--muted); font-size: 13px; cursor: pointer; transition: var(--transition); display: flex; align-items: center; justify-content: center; }
+  .act-btn:hover { background: rgba(255,255,255,0.07); color: var(--text); border-color: var(--border2); }
+  .act-btn.view:hover { color: var(--info); border-color: rgba(59,130,246,0.3); background: rgba(59,130,246,0.1); }
+  .act-btn.edit:hover { color: var(--warning); border-color: rgba(245,158,11,0.3); background: rgba(245,158,11,0.1); }
+  .act-btn.delete:hover { color: var(--danger); border-color: rgba(239,68,68,0.3); background: rgba(239,68,68,0.1); }
+  .act-btn.approve:hover { color: var(--success); border-color: rgba(16,185,129,0.3); background: rgba(16,185,129,0.1); }
+  .act-btn.suspend:hover { color: var(--warning); border-color: rgba(245,158,11,0.3); background: rgba(245,158,11,0.1); }
+
+  /* ===== BUTTONS ===== */
+  .btn { display: inline-flex; align-items: center; gap: 8px; padding: 9px 18px; border-radius: 8px; font-size: 13px; font-weight: 700; border: none; cursor: pointer; transition: var(--transition); }
+  .btn-primary { background: var(--primary); color: white; }
+  .btn-primary:hover { background: #e55a24; box-shadow: 0 4px 12px var(--primary-glow); }
+  .btn-success { background: var(--success); color: white; }
+  .btn-success:hover { background: #059669; }
+  .btn-danger { background: var(--danger); color: white; }
+  .btn-danger:hover { background: #dc2626; }
+  .btn-outline { background: transparent; color: var(--primary); border: 1.5px solid var(--primary); }
+  .btn-outline:hover { background: var(--primary); color: white; }
+  .btn-ghost { background: rgba(255,255,255,0.06); color: var(--light); border: 1px solid var(--border); }
+  .btn-ghost:hover { background: rgba(255,255,255,0.1); color: white; }
+  .btn-gold { background: var(--gold); color: #111; }
+  .btn-gold:hover { background: #d97706; }
+  .btn-sm { padding: 6px 12px; font-size: 12px; }
+
+  /* ===== FORMS ===== */
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .form-full { grid-column: 1 / -1; }
+  .form-group { display: flex; flex-direction: column; gap: 6px; }
+  .form-label { font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; }
+  .form-control {
+    padding: 10px 14px; background: rgba(255,255,255,0.05);
+    border: 1.5px solid var(--border); border-radius: 8px;
+    color: var(--text); font-size: 13px; outline: none; transition: var(--transition);
+  }
+  .form-control:focus { border-color: var(--primary); background: rgba(255,107,53,0.05); box-shadow: 0 0 0 3px rgba(255,107,53,0.08); }
+  .form-control::placeholder { color: var(--muted); }
+  .form-control option { background: var(--card); }
+  .form-section { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 24px; margin-bottom: 20px; }
+  .form-section-title { font-size: 14px; font-weight: 700; color: white; padding-bottom: 14px; border-bottom: 1px solid var(--border); margin-bottom: 20px; display: flex; align-items: center; gap: 10px; }
+  .form-section-title i { color: var(--primary); }
+
+  /* ===== STATS ROW ===== */
+  .stats-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 16px; }
+  .stat-mini { background: var(--card2); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 16px; }
+  .stat-mini-val { font-size: 22px; font-weight: 900; color: white; margin-bottom: 2px; }
+  .stat-mini-label { font-size: 12px; color: var(--muted); }
+
+  /* ===== ACTIVITY FEED ===== */
+  .activity-item { display: flex; gap: 12px; padding: 12px 0; border-bottom: 1px solid rgba(255,255,255,0.04); }
+  .activity-item:last-child { border-bottom: none; }
+  .activity-dot { width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 14px; flex-shrink: 0; }
+  .activity-body { flex: 1; }
+  .activity-title { font-size: 13px; color: var(--text); margin-bottom: 2px; }
+  .activity-title strong { color: var(--primary); }
+  .activity-time { font-size: 11px; color: var(--muted); }
+  .activity-amount { font-size: 13px; font-weight: 700; color: var(--success); white-space: nowrap; }
+
+  /* ===== USER AVATAR ===== */
+  .user-cell { display: flex; align-items: center; gap: 10px; }
+  .user-av { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; color: white; flex-shrink: 0; }
+
+  /* ===== MODAL ===== */
+  .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 9000; align-items: center; justify-content: center; backdrop-filter: blur(4px); }
+  .modal-overlay.open { display: flex; }
+  .admin-modal { background: var(--card); border: 1px solid var(--border2); border-radius: var(--radius-lg); max-width: 520px; width: 90%; max-height: 90vh; overflow-y: auto; box-shadow: 0 24px 80px rgba(0,0,0,0.6); animation: modalIn 0.3s ease; }
+  @keyframes modalIn { from { transform: scale(0.92) translateY(16px); opacity: 0; } to { transform: scale(1) translateY(0); opacity: 1; } }
+  .modal-head { padding: 20px 24px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+  .modal-head h3 { font-size: 16px; font-weight: 800; color: white; display: flex; align-items: center; gap: 10px; }
+  .modal-head h3 i { color: var(--primary); }
+  .modal-close { width: 32px; height: 32px; border-radius: 8px; border: 1px solid var(--border); background: transparent; color: var(--muted); font-size: 18px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: var(--transition); }
+  .modal-close:hover { border-color: var(--danger); color: var(--danger); background: rgba(239,68,68,0.1); }
+  .modal-body { padding: 24px; }
+  .modal-footer { padding: 16px 24px; border-top: 1px solid var(--border); display: flex; gap: 10px; justify-content: flex-end; }
+
+  /* ===== TOAST ===== */
+  .toast-stack { position: fixed; bottom: 24px; left: 24px; z-index: 9999; display: flex; flex-direction: column; gap: 10px; pointer-events: none; }
+  .adm-toast { display: flex; align-items: center; gap: 12px; padding: 14px 18px; background: var(--card2); border-radius: 12px; border: 1px solid var(--border2); box-shadow: var(--shadow); animation: toastIn 0.3s ease; pointer-events: all; min-width: 280px; max-width: 360px; }
+  .adm-toast.success { border-color: rgba(16,185,129,0.3); }
+  .adm-toast.error { border-color: rgba(239,68,68,0.3); }
+  .adm-toast.warning { border-color: rgba(245,158,11,0.3); }
+  .adm-toast.info { border-color: rgba(59,130,246,0.3); }
+  .adm-toast i { font-size: 18px; flex-shrink: 0; }
+  .adm-toast.success i { color: var(--success); }
+  .adm-toast.error i { color: var(--danger); }
+  .adm-toast.warning i { color: var(--warning); }
+  .adm-toast.info i { color: var(--info); }
+  .adm-toast span { font-size: 13px; color: var(--text); line-height: 1.5; }
+  @keyframes toastIn { from { transform: translateX(-20px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+
+  /* ===== SETTINGS ===== */
+  .settings-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .setting-item { background: var(--card2); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px 20px; display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+  .setting-label { font-size: 13px; color: var(--light); font-weight: 600; }
+  .setting-desc { font-size: 11px; color: var(--muted); margin-top: 2px; }
+  .toggle-switch { position: relative; width: 44px; height: 24px; flex-shrink: 0; }
+  .toggle-switch input { display: none; }
+  .toggle-slider { position: absolute; inset: 0; background: rgba(255,255,255,0.1); border-radius: 20px; cursor: pointer; transition: var(--transition); border: 1px solid var(--border); }
+  .toggle-slider::before { content: ''; position: absolute; top: 2px; right: 2px; width: 18px; height: 18px; border-radius: 50%; background: var(--muted); transition: var(--transition); }
+  .toggle-switch input:checked + .toggle-slider { background: rgba(16,185,129,0.2); border-color: var(--success); }
+  .toggle-switch input:checked + .toggle-slider::before { background: var(--success); transform: translateX(-20px); }
+
+  /* ===== CSV EXPORT BTN ===== */
+  .btn-csv { background: rgba(16,185,129,0.12); color: var(--success); border: 1px solid rgba(16,185,129,0.2); }
+  .btn-csv:hover { background: var(--success); color: white; }
+
+  /* ===== TICKET PRIORITY COLORS ===== */
+  .badge-critical { animation: critBlink 2s infinite; }
+  @keyframes critBlink { 0%,100%{opacity:1}50%{opacity:0.6} }
+
+  /* ===== LOG TYPE TAGS ===== */
+  #systemLogsFeed { scrollbar-width: thin; }
+
+  /* ===== RESPONSIVE ===== */
+  @media (max-width: 1200px) { .kpi-grid { grid-template-columns: repeat(2,1fr); } }
+  @media (max-width: 900px) {
+    :root { --sidebar-w: 0px; }
+    .admin-sidebar { transform: translateX(100%); }
+    .admin-sidebar.open { transform: translateX(0); --sidebar-w: 260px; }
+    .admin-topbar { right: 0; }
+    .admin-main { margin-right: 0; }
+    .charts-row { grid-template-columns: 1fr; }
+  }
+  @media (max-width: 600px) {
+    .kpi-grid { grid-template-columns: 1fr 1fr; }
+    .form-grid { grid-template-columns: 1fr; }
+    .settings-grid { grid-template-columns: 1fr; }
+  }
+  </style>
+</head>
+<body>
+
+<!-- AUTH GUARD -->
+<script>
+  (function(){
+    const s = localStorage.getItem('tradehub_admin');
+    if(!s){ window.location.href='admin-login.html'; return; }
+    try{ const d=JSON.parse(s); if(Date.now()-d.loginTime>86400000){ localStorage.removeItem('tradehub_admin'); window.location.href='admin-login.html'; } }
+    catch(e){ window.location.href='admin-login.html'; }
+  })();
+</script>
+
+<div class="admin-layout">
+
+  <!-- ===== SIDEBAR ===== -->
+  <aside class="admin-sidebar" id="adminSidebar">
+    <div class="sidebar-header">
+      <div class="sidebar-logo"><i class="fas fa-shield-alt"></i></div>
+      <div class="sidebar-brand">TradeHub Pro <small>Super Admin</small></div>
+    </div>
+
+    <div class="sidebar-admin-info">
+      <div class="admin-avatar">م</div>
+      <div class="admin-info-text">
+        <div class="admin-info-name">المدير العام</div>
+        <div class="admin-info-role"><i class="fas fa-crown"></i> SUPER ADMIN</div>
+      </div>
+      <div class="online-dot" title="متصل"></div>
+    </div>
+
+    <nav class="sidebar-nav">
+      <div class="nav-section-title">الرئيسية</div>
+      <button class="nav-item active" onclick="showPage('overview')"><i class="fas fa-chart-pie"></i> لوحة المعلومات <span class="nav-badge green">مباشر</span></button>
+      <button class="nav-item" onclick="showPage('activity')"><i class="fas fa-stream"></i> سجل النشاط <span class="nav-badge red">12</span></button>
+
+      <div class="nav-section-title">إدارة المستخدمين</div>
+      <button class="nav-item" onclick="showPage('users')"><i class="fas fa-users"></i> جميع المستخدمين</button>
+      <button class="nav-item" onclick="showPage('pending')"><i class="fas fa-user-clock"></i> طلبات التسجيل <span class="nav-badge red" id="navPendingBadge">...</span></button>
+      <button class="nav-item" onclick="showPage('sellers')"><i class="fas fa-store"></i> الموردون <span class="nav-badge orange">2 معلق</span></button>
+      <button class="nav-item" onclick="showPage('buyers')"><i class="fas fa-shopping-bag"></i> المشترون</button>
+
+      <div class="nav-section-title">إدارة المحتوى</div>
+      <button class="nav-item" onclick="showPage('products')"><i class="fas fa-boxes"></i> المنتجات</button>
+      <button class="nav-item" onclick="showPage('categories')"><i class="fas fa-tags"></i> الفئات</button>
+      <button class="nav-item" onclick="showPage('reports')"><i class="fas fa-flag"></i> البلاغات <span class="nav-badge red">3</span></button>
+
+      <div class="nav-section-title">المالية</div>
+      <button class="nav-item" onclick="showPage('orders')"><i class="fas fa-file-invoice-dollar"></i> الطلبات والمعاملات</button>
+      <button class="nav-item" onclick="showPage('finance')"><i class="fas fa-chart-line"></i> التقارير المالية</button>
+      <button class="nav-item" onclick="showPage('commissions')"><i class="fas fa-percent"></i> العمولات</button>
+
+      <div class="nav-section-title">دعم وجودة</div>
+      <button class="nav-item" onclick="showPage('tickets')"><i class="fas fa-headset"></i> الدعم الفني <span class="nav-badge red" id="navTicketBadge">2</span></button>
+      <button class="nav-item" onclick="showPage('reviews')"><i class="fas fa-star"></i> التقييمات <span class="nav-badge orange" id="navReviewBadge">2</span></button>
+
+      <div class="nav-section-title">الإعدادات</div>
+      <button class="nav-item" onclick="showPage('settings')"><i class="fas fa-cog"></i> إعدادات المنصة</button>
+      <button class="nav-item" onclick="showPage('admins')"><i class="fas fa-user-shield"></i> مدراء النظام</button>
+      <button class="nav-item" onclick="showPage('logs')"><i class="fas fa-terminal"></i> سجلات النظام</button>
+    </nav>
+
+    <div class="sidebar-footer">
+      <button class="footer-btn" onclick="window.open('index.html','_blank')"><i class="fas fa-external-link-alt"></i> الموقع</button>
+      <button class="footer-btn danger" onclick="adminLogout()"><i class="fas fa-sign-out-alt"></i> خروج</button>
+    </div>
+  </aside>
+
+  <!-- ===== TOP BAR ===== -->
+  <header class="admin-topbar">
+    <span class="topbar-title" id="topbarTitle">لوحة المعلومات <span>/ نظرة عامة</span></span>
+    <div class="topbar-actions">
+      <div class="topbar-time" id="adminClock">--:--</div>
+      <button class="topbar-btn" onclick="showPage('reports')" title="البلاغات">
+        <i class="fas fa-flag"></i>
+        <span class="topbar-notif">3</span>
+      </button>
+      <button class="topbar-btn" onclick="showPage('activity')" title="الإشعارات">
+        <i class="fas fa-bell"></i>
+        <span class="topbar-notif">12</span>
+      </button>
+      <button class="topbar-btn" onclick="showPage('settings')" title="الإعدادات"><i class="fas fa-cog"></i></button>
+      <button class="topbar-btn" id="sidebarToggle" style="display:none" onclick="toggleSidebar()"><i class="fas fa-bars"></i></button>
+    </div>
+  </header>
+
+  <!-- ===== MAIN ===== -->
+  <main class="admin-main">
+
+    <!-- ======================================
+         PAGE 1: OVERVIEW / DASHBOARD
+    ====================================== -->
+    <div class="admin-page active" id="page-overview">
+      <div class="page-header">
+        <div class="page-title">
+          <div class="page-title-icon" style="background:rgba(255,107,53,0.15)"><i class="fas fa-chart-pie" style="color:var(--primary)"></i></div>
+          لوحة المعلومات الشاملة
+        </div>
+        <div class="page-actions">
+          <button class="btn btn-ghost btn-sm" onclick="refreshOverview()"><i class="fas fa-sync-alt"></i> تحديث</button>
+          <button class="btn btn-primary btn-sm" onclick="exportReport()"><i class="fas fa-download"></i> تصدير التقرير</button>
+        </div>
+      </div>
+
+      <!-- KPIs -->
+      <div class="kpi-grid">
+        <div class="kpi-card">
+          <div class="kpi-top">
+            <div class="kpi-icon-wrap" style="background:rgba(255,107,53,0.12)"><i class="fas fa-dollar-sign" style="color:var(--primary);font-size:22px"></i></div>
+            <div class="kpi-trend up"><i class="fas fa-arrow-up"></i> 14.2%</div>
+          </div>
+          <div class="kpi-value" id="kpi-revenue">$842K</div>
+          <div class="kpi-label">إجمالي إيرادات المنصة</div>
+          <div class="kpi-bar"><div class="kpi-bar-fill" style="width:74%;background:var(--primary)"></div></div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-top">
+            <div class="kpi-icon-wrap" style="background:rgba(16,185,129,0.12)"><i class="fas fa-users" style="color:var(--success);font-size:22px"></i></div>
+            <div class="kpi-trend up"><i class="fas fa-arrow-up"></i> 8.5%</div>
+          </div>
+          <div class="kpi-value" id="kpi-users">24,831</div>
+          <div class="kpi-label">إجمالي المستخدمين</div>
+          <div class="kpi-bar"><div class="kpi-bar-fill" style="width:62%;background:var(--success)"></div></div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-top">
+            <div class="kpi-icon-wrap" style="background:rgba(59,130,246,0.12)"><i class="fas fa-shopping-bag" style="color:var(--info);font-size:22px"></i></div>
+            <div class="kpi-trend up"><i class="fas fa-arrow-up"></i> 11.3%</div>
+          </div>
+          <div class="kpi-value" id="kpi-orders">18,540</div>
+          <div class="kpi-label">إجمالي الطلبات</div>
+          <div class="kpi-bar"><div class="kpi-bar-fill" style="width:81%;background:var(--info)"></div></div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-top">
+            <div class="kpi-icon-wrap" style="background:rgba(245,158,11,0.12)"><i class="fas fa-percent" style="color:var(--gold);font-size:22px"></i></div>
+            <div class="kpi-trend up"><i class="fas fa-arrow-up"></i> 5.8%</div>
+          </div>
+          <div class="kpi-value" id="kpi-commission">$42.1K</div>
+          <div class="kpi-label">عمولات المنصة (الشهر)</div>
+          <div class="kpi-bar"><div class="kpi-bar-fill" style="width:55%;background:var(--gold)"></div></div>
+        </div>
+      </div>
+
+      <!-- Second Row KPIs -->
+      <div class="kpi-grid" style="grid-template-columns:repeat(4,1fr);margin-bottom:24px">
+        <div class="kpi-card" style="padding:16px">
+          <div style="display:flex;align-items:center;gap:10px">
+            <div style="width:40px;height:40px;border-radius:10px;background:rgba(139,92,246,0.12);display:flex;align-items:center;justify-content:center"><i class="fas fa-store" style="color:var(--purple)"></i></div>
+            <div><div style="font-size:20px;font-weight:800;color:white">5,284</div><div style="font-size:12px;color:var(--muted)">الموردون النشطون</div></div>
+          </div>
+        </div>
+        <div class="kpi-card" style="padding:16px">
+          <div style="display:flex;align-items:center;gap:10px">
+            <div style="width:40px;height:40px;border-radius:10px;background:rgba(16,185,129,0.12);display:flex;align-items:center;justify-content:center"><i class="fas fa-boxes" style="color:var(--success)"></i></div>
+            <div><div style="font-size:20px;font-weight:800;color:white">2.1M</div><div style="font-size:12px;color:var(--muted)">المنتجات المنشورة</div></div>
+          </div>
+        </div>
+        <div class="kpi-card" style="padding:16px">
+          <div style="display:flex;align-items:center;gap:10px">
+            <div style="width:40px;height:40px;border-radius:10px;background:rgba(239,68,68,0.12);display:flex;align-items:center;justify-content:center"><i class="fas fa-flag" style="color:var(--danger)"></i></div>
+            <div><div style="font-size:20px;font-weight:800;color:white">3</div><div style="font-size:12px;color:var(--muted)">بلاغات مفتوحة</div></div>
+          </div>
+        </div>
+        <div class="kpi-card" style="padding:16px">
+          <div style="display:flex;align-items:center;gap:10px">
+            <div style="width:40px;height:40px;border-radius:10px;background:rgba(245,158,11,0.12);display:flex;align-items:center;justify-content:center"><i class="fas fa-hourglass-half" style="color:var(--gold)"></i></div>
+            <div><div style="font-size:20px;font-weight:800;color:white">2</div><div style="font-size:12px;color:var(--muted)">موردون ينتظرون القبول</div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Charts Row -->
+      <div class="charts-row">
+        <div class="chart-card">
+          <div class="chart-header">
+            <div class="chart-title"><i class="fas fa-chart-line"></i> الإيرادات والطلبات</div>
+            <div class="chart-tabs">
+              <button class="chart-tab active" onclick="switchRevenueChart('monthly',this)">شهري</button>
+              <button class="chart-tab" onclick="switchRevenueChart('weekly',this)">أسبوعي</button>
+            </div>
+          </div>
+          <div class="chart-wrap"><canvas id="mainRevenueChart"></canvas></div>
+        </div>
+        <div class="chart-card">
+          <div class="chart-header">
+            <div class="chart-title"><i class="fas fa-globe"></i> توزيع المستخدمين</div>
+          </div>
+          <div class="chart-wrap"><canvas id="usersGeoChart"></canvas></div>
+        </div>
+      </div>
+
+      <div class="charts-row">
+        <div class="chart-card">
+          <div class="chart-header">
+            <div class="chart-title"><i class="fas fa-shopping-cart"></i> حالات الطلبات</div>
+          </div>
+          <div class="chart-wrap"><canvas id="ordersStatusChart"></canvas></div>
+        </div>
+        <div class="chart-card">
+          <div class="chart-header">
+            <div class="chart-title"><i class="fas fa-chart-bar"></i> المبيعات بالفئة</div>
+          </div>
+          <div class="chart-wrap"><canvas id="categorySalesChart"></canvas></div>
+        </div>
+      </div>
+
+      <!-- Activity & Alerts -->
+      <div class="charts-row">
+        <div class="chart-card">
+          <div class="chart-header">
+            <div class="chart-title"><i class="fas fa-stream"></i> آخر الأنشطة</div>
+            <button class="btn btn-ghost btn-sm" onclick="showPage('activity')">عرض الكل</button>
+          </div>
+          <div id="activityFeed"></div>
+        </div>
+        <div class="chart-card">
+          <div class="chart-header">
+            <div class="chart-title"><i class="fas fa-exclamation-triangle" style="color:var(--warning)"></i> تنبيهات النظام</div>
+          </div>
+          <div id="systemAlerts"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ======================================
+         PAGE 2: USERS MANAGEMENT
+    ====================================== -->
+    <div class="admin-page" id="page-users">
+      <div class="page-header">
+        <div class="page-title">
+          <div class="page-title-icon" style="background:rgba(59,130,246,0.15)"><i class="fas fa-users" style="color:var(--info)"></i></div>
+          إدارة المستخدمين
+        </div>
+        <div class="page-actions">
+          <button class="btn btn-ghost btn-sm" onclick="exportUsersCSV()"><i class="fas fa-file-csv"></i> تصدير CSV</button>
+          <button class="btn btn-primary btn-sm" onclick="openModal('addUserModal')"><i class="fas fa-user-plus"></i> إضافة مستخدم</button>
+        </div>
+      </div>
+      <div class="kpi-grid" style="grid-template-columns:repeat(4,1fr);margin-bottom:20px">
+        <div class="kpi-card" style="padding:16px"><div style="font-size:24px;font-weight:900;color:white">24,831</div><div style="font-size:12px;color:var(--muted)">إجمالي المستخدمين</div></div>
+        <div class="kpi-card" style="padding:16px"><div style="font-size:24px;font-weight:900;color:var(--success)">22,104</div><div style="font-size:12px;color:var(--muted)">مستخدمون نشطون</div></div>
+        <div class="kpi-card" style="padding:16px"><div style="font-size:24px;font-weight:900;color:var(--warning)">381</div><div style="font-size:12px;color:var(--muted)">موقوفون</div></div>
+        <div class="kpi-card" style="padding:16px"><div style="font-size:24px;font-weight:900;color:var(--danger)">46</div><div style="font-size:12px;color:var(--muted)">محظورون</div></div>
+      </div>
+      <div class="admin-table-wrap">
+        <div class="table-header">
+          <div class="table-title"><i class="fas fa-list" style="color:var(--primary)"></i> قائمة المستخدمين</div>
+          <div class="table-controls">
+            <input class="tbl-search" placeholder="بحث بالاسم أو البريد..." id="usersSearch" oninput="filterUsers()" />
+            <select class="tbl-select" id="usersRoleFilter" onchange="filterUsers()">
+              <option value="">جميع الأدوار</option>
+              <option value="buyer">مشتري</option>
+              <option value="seller">بائع</option>
+            </select>
+            <select class="tbl-select" id="usersStatusFilter" onchange="filterUsers()">
+              <option value="">جميع الحالات</option>
+              <option value="active">نشط</option>
+              <option value="pending">معلق</option>
+              <option value="suspended">موقوف</option>
+              <option value="banned">محظور</option>
+            </select>
+          </div>
+        </div>
+        <div style="overflow-x:auto">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th><input type="checkbox" id="selectAllUsers" onchange="selectAll('userRow')" style="accent-color:var(--primary)"></th>
+                <th>المستخدم</th><th>البريد الإلكتروني</th><th>الدور</th>
+                <th>الدولة</th><th>الحالة</th><th>الطلبات</th><th>الإجمالي</th><th>تاريخ التسجيل</th><th>إجراءات</th>
+              </tr>
+            </thead>
+            <tbody id="usersTableBody">
+              <tr><td colspan="10" style="text-align:center;padding:30px;color:var(--muted)"><i class="fas fa-spinner fa-spin"></i> جارٍ التحميل...</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="tbl-pagination"><span id="usersPagInfo">—</span><div class="page-btns" id="usersPagBtns"></div></div>
+      </div>
+    </div>
+
+    <!-- ======================================
+         PAGE 3: SELLERS MANAGEMENT
+    ====================================== -->
+    <div class="admin-page" id="page-sellers">
+      <div class="page-header">
+        <div class="page-title">
+          <div class="page-title-icon" style="background:rgba(139,92,246,0.15)"><i class="fas fa-store" style="color:var(--purple)"></i></div>
+          إدارة الموردين
+        </div>
+      </div>
+      <div class="kpi-grid" style="grid-template-columns:repeat(3,1fr);margin-bottom:20px">
+        <div class="kpi-card" style="padding:16px"><div style="font-size:24px;font-weight:900;color:var(--success)">5,284</div><div style="font-size:12px;color:var(--muted)">موردون نشطون</div></div>
+        <div class="kpi-card" style="padding:16px"><div style="font-size:24px;font-weight:900;color:var(--warning)">2</div><div style="font-size:12px;color:var(--muted)">ينتظرون المراجعة</div></div>
+        <div class="kpi-card" style="padding:16px"><div style="font-size:24px;font-weight:900;color:var(--info)">4,891</div><div style="font-size:12px;color:var(--muted)">موردون معتمدون</div></div>
+      </div>
+      <!-- Pending Sellers Alert -->
+      <div style="background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.2);border-radius:var(--radius);padding:16px;margin-bottom:20px;display:flex;align-items:center;gap:12px">
+        <i class="fas fa-exclamation-circle" style="color:var(--warning);font-size:20px"></i>
+        <div><strong style="color:var(--warning)">موردون ينتظرون الموافقة:</strong> <span style="color:var(--light)">هناك 2 مورد جديد ينتظران مراجعتك والموافقة عليهم.</span></div>
+        <button class="btn btn-gold btn-sm" style="margin-right:auto" onclick="showPendingSellers()"><i class="fas fa-eye"></i> مراجعة الآن</button>
+      </div>
+      <div class="admin-table-wrap">
+        <div class="table-header">
+          <div class="table-title"><i class="fas fa-store" style="color:var(--purple)"></i> قائمة الموردين</div>
+          <div class="table-controls">
+            <input class="tbl-search" placeholder="بحث عن مورد..." id="sellersSearch" oninput="filterSellers()" />
+            <select class="tbl-select" id="sellersStatusFilter" onchange="filterSellers()">
+              <option value="">جميع الحالات</option>
+              <option value="active">نشط</option>
+              <option value="pending">معلق</option>
+              <option value="suspended">موقوف</option>
+            </select>
+          </div>
+        </div>
+        <div style="overflow-x:auto">
+          <table class="data-table">
+            <thead>
+              <tr><th>المورد</th><th>البريد</th><th>الدولة</th><th>المنتجات</th><th>الطلبات</th><th>الحالة</th><th>معتمد</th><th>إجراءات</th></tr>
+            </thead>
+            <tbody id="sellersTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ======================================
+         PAGE 4: BUYERS
+    ====================================== -->
+    <div class="admin-page" id="page-buyers">
+      <div class="page-header">
+        <div class="page-title">
+          <div class="page-title-icon" style="background:rgba(59,130,246,0.15)"><i class="fas fa-shopping-bag" style="color:var(--info)"></i></div>
+          إدارة المشترين
+        </div>
+      </div>
+      <div class="admin-table-wrap">
+        <div class="table-header">
+          <div class="table-title"><i class="fas fa-users" style="color:var(--info)"></i> قائمة المشترين</div>
+          <div class="table-controls">
+            <input class="tbl-search" placeholder="بحث عن مشترٍ..." id="buyersSearch" oninput="filterBuyers()" />
+          </div>
+        </div>
+        <div style="overflow-x:auto">
+          <table class="data-table">
+            <thead>
+              <tr><th>المشتري</th><th>البريد</th><th>الدولة</th><th>عدد الطلبات</th><th>الإجمالي المنفق</th><th>الحالة</th><th>تاريخ التسجيل</th><th>إجراءات</th></tr>
+            </thead>
+            <tbody id="buyersTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ======================================
+         PAGE 5: PRODUCTS
+    ====================================== -->
+    <div class="admin-page" id="page-products">
+      <div class="page-header">
+        <div class="page-title">
+          <div class="page-title-icon" style="background:rgba(16,185,129,0.15)"><i class="fas fa-boxes" style="color:var(--success)"></i></div>
+          إدارة المنتجات
+        </div>
+        <div class="page-actions">
+          <button class="btn btn-danger btn-sm" onclick="bulkDeleteProducts()"><i class="fas fa-trash"></i> حذف المحدد</button>
+          <button class="btn btn-primary btn-sm" onclick="window.open('seller.html#add','_blank')"><i class="fas fa-plus"></i> منتج جديد</button>
+        </div>
+      </div>
+      <div class="admin-table-wrap">
+        <div class="table-header">
+          <div class="table-title"><i class="fas fa-boxes" style="color:var(--success)"></i> جميع المنتجات (<span id="productsCount">—</span>)</div>
+          <div class="table-controls">
+            <input class="tbl-search" placeholder="بحث في المنتجات..." id="adminProductsSearch" oninput="filterAdminProducts()" />
+            <select class="tbl-select" id="adminProductsCatFilter" onchange="filterAdminProducts()">
+              <option value="">جميع الفئات</option>
+              <option value="cat1">الإلكترونيات</option>
+              <option value="cat2">الملابس</option>
+              <option value="cat3">الآلات</option>
+              <option value="cat4">المنزل</option>
+              <option value="cat5">الجمال</option>
+              <option value="cat6">السيارات</option>
+              <option value="cat7">الرياضة</option>
+              <option value="cat8">الأغذية</option>
+            </select>
+          </div>
+        </div>
+        <div style="overflow-x:auto">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th><input type="checkbox" id="selectAllProds" onchange="selectAll('prodRow')" style="accent-color:var(--primary)"></th>
+                <th>المنتج</th><th>الفئة</th><th>المورد</th><th>السعر</th><th>الحد الأدنى</th><th>التقييم</th><th>الحالة</th><th>إجراءات</th>
+              </tr>
+            </thead>
+            <tbody id="adminProductsBody">
+              <tr><td colspan="9" style="text-align:center;padding:30px;color:var(--muted)"><i class="fas fa-spinner fa-spin"></i></td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="tbl-pagination"><span id="prodsPagInfo">—</span><div class="page-btns" id="prodsPagBtns"></div></div>
+      </div>
+    </div>
+
+    <!-- ======================================
+         PAGE 6: CATEGORIES
+    ====================================== -->
+    <div class="admin-page" id="page-categories">
+      <div class="page-header">
+        <div class="page-title">
+          <div class="page-title-icon" style="background:rgba(255,107,53,0.15)"><i class="fas fa-tags" style="color:var(--primary)"></i></div>
+          إدارة الفئات
+        </div>
+        <div class="page-actions">
+          <button class="btn btn-primary btn-sm" onclick="openModal('addCatModal')"><i class="fas fa-plus"></i> فئة جديدة</button>
+        </div>
+      </div>
+      <div id="categoriesGrid" style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px"></div>
+    </div>
+
+    <!-- ======================================
+         PAGE 7: ORDERS
+    ====================================== -->
+    <div class="admin-page" id="page-orders">
+      <div class="page-header">
+        <div class="page-title">
+          <div class="page-title-icon" style="background:rgba(59,130,246,0.15)"><i class="fas fa-file-invoice-dollar" style="color:var(--info)"></i></div>
+          الطلبات والمعاملات
+        </div>
+        <div class="page-actions">
+          <button class="btn btn-ghost btn-sm" onclick="exportOrders()"><i class="fas fa-file-excel"></i> تصدير Excel</button>
+        </div>
+      </div>
+      <div class="kpi-grid" style="grid-template-columns:repeat(5,1fr);margin-bottom:20px">
+        <div class="kpi-card" style="padding:14px"><div style="font-size:18px;font-weight:800;color:white" id="o-total">—</div><div style="font-size:11px;color:var(--muted)">إجمالي الطلبات</div></div>
+        <div class="kpi-card" style="padding:14px"><div style="font-size:18px;font-weight:800;color:var(--warning)" id="o-pending">—</div><div style="font-size:11px;color:var(--muted)">قيد المراجعة</div></div>
+        <div class="kpi-card" style="padding:14px"><div style="font-size:18px;font-weight:800;color:var(--info)" id="o-process">—</div><div style="font-size:11px;color:var(--muted)">جاري التجهيز</div></div>
+        <div class="kpi-card" style="padding:14px"><div style="font-size:18px;font-weight:800;color:var(--success)" id="o-done">—</div><div style="font-size:11px;color:var(--muted)">مكتملة</div></div>
+        <div class="kpi-card" style="padding:14px"><div style="font-size:18px;font-weight:800;color:var(--danger)" id="o-cancel">—</div><div style="font-size:11px;color:var(--muted)">ملغاة / مستردة</div></div>
+      </div>
+      <div class="admin-table-wrap">
+        <div class="table-header">
+          <div class="table-title"><i class="fas fa-list" style="color:var(--info)"></i> سجل الطلبات</div>
+          <div class="table-controls">
+            <input class="tbl-search" placeholder="رقم الطلب أو اسم المشتري..." id="ordersSearch" oninput="filterOrders()" />
+            <select class="tbl-select" id="ordersStatusFilter" onchange="filterOrders()">
+              <option value="">جميع الحالات</option>
+              <option value="pending">معلق</option>
+              <option value="processing">جاري</option>
+              <option value="shipped">مشحون</option>
+              <option value="delivered">مسلّم</option>
+              <option value="cancelled">ملغي</option>
+              <option value="refunded">مسترد</option>
+            </select>
+          </div>
+        </div>
+        <div style="overflow-x:auto">
+          <table class="data-table">
+            <thead>
+              <tr><th>رقم الطلب</th><th>المشتري</th><th>المورد</th><th>المنتج</th><th>الكمية</th><th>القيمة</th><th>العمولة</th><th>الدفع</th><th>الحالة</th><th>التاريخ</th><th>إجراء</th></tr>
+            </thead>
+            <tbody id="ordersTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ======================================
+         PAGE 8: REPORTS / FLAGS
+    ====================================== -->
+    <div class="admin-page" id="page-reports">
+      <div class="page-header">
+        <div class="page-title">
+          <div class="page-title-icon" style="background:rgba(239,68,68,0.15)"><i class="fas fa-flag" style="color:var(--danger)"></i></div>
+          البلاغات والمخالفات
+        </div>
+      </div>
+      <div class="kpi-grid" style="grid-template-columns:repeat(4,1fr);margin-bottom:20px">
+        <div class="kpi-card" style="padding:14px"><div style="font-size:22px;font-weight:900;color:var(--danger)" id="rep-open">—</div><div style="font-size:11px;color:var(--muted)">مفتوحة</div></div>
+        <div class="kpi-card" style="padding:14px"><div style="font-size:22px;font-weight:900;color:var(--warning)" id="rep-review">—</div><div style="font-size:11px;color:var(--muted)">قيد المراجعة</div></div>
+        <div class="kpi-card" style="padding:14px"><div style="font-size:22px;font-weight:900;color:var(--success)" id="rep-done">—</div><div style="font-size:11px;color:var(--muted)">محلولة</div></div>
+        <div class="kpi-card" style="padding:14px"><div style="font-size:22px;font-weight:900;color:var(--muted)" id="rep-dismiss">—</div><div style="font-size:11px;color:var(--muted)">مرفوضة</div></div>
+      </div>
+      <div class="admin-table-wrap">
+        <div class="table-header">
+          <div class="table-title"><i class="fas fa-flag" style="color:var(--danger)"></i> قائمة البلاغات</div>
+          <div class="table-controls">
+            <select class="tbl-select" id="reportsStatusFilter" onchange="filterReports()">
+              <option value="">جميع الحالات</option>
+              <option value="open">مفتوح</option>
+              <option value="reviewing">قيد المراجعة</option>
+              <option value="resolved">محلول</option>
+            </select>
+            <select class="tbl-select" id="reportsTypeFilter" onchange="filterReports()">
+              <option value="">جميع الأنواع</option>
+              <option value="product">منتج</option>
+              <option value="seller">بائع</option>
+              <option value="review">تقييم</option>
+              <option value="spam">سبام</option>
+            </select>
+          </div>
+        </div>
+        <div style="overflow-x:auto">
+          <table class="data-table">
+            <thead>
+              <tr><th>المُبلِّغ</th><th>العنصر المُبلَّغ عنه</th><th>النوع</th><th>السبب</th><th>الأولوية</th><th>الحالة</th><th>التاريخ</th><th>إجراء</th></tr>
+            </thead>
+            <tbody id="reportsTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ======================================
+         PAGE 9: FINANCE
+    ====================================== -->
+    <div class="admin-page" id="page-finance">
+      <div class="page-header">
+        <div class="page-title">
+          <div class="page-title-icon" style="background:rgba(16,185,129,0.15)"><i class="fas fa-chart-line" style="color:var(--success)"></i></div>
+          التقارير المالية
+        </div>
+        <div class="page-actions">
+          <button class="btn btn-success btn-sm" onclick="exportFinance()"><i class="fas fa-file-pdf"></i> تصدير PDF</button>
+        </div>
+      </div>
+      <div class="kpi-grid" style="grid-template-columns:repeat(4,1fr);margin-bottom:24px">
+        <div class="kpi-card"><div class="kpi-value" style="color:var(--success)">$842K</div><div class="kpi-label">إجمالي المبيعات (2026)</div></div>
+        <div class="kpi-card"><div class="kpi-value" style="color:var(--primary)">$42.1K</div><div class="kpi-label">عمولات المنصة</div></div>
+        <div class="kpi-card"><div class="kpi-value" style="color:var(--info)">$12.4K</div><div class="kpi-label">مبالغ مسترجعة</div></div>
+        <div class="kpi-card"><div class="kpi-value" style="color:var(--gold)">$799.6K</div><div class="kpi-label">صافي المعاملات</div></div>
+      </div>
+      <div class="chart-card" style="margin-bottom:24px">
+        <div class="chart-header">
+          <div class="chart-title"><i class="fas fa-chart-area"></i> الأداء المالي الشهري</div>
+        </div>
+        <div style="height:300px"><canvas id="financeChart"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-header">
+          <div class="chart-title"><i class="fas fa-table"></i> ملخص المعاملات الشهرية</div>
+        </div>
+        <table class="data-table">
+          <thead><tr><th>الشهر</th><th>المبيعات</th><th>العمولة</th><th>الاسترجاعات</th><th>الطلبات</th><th>معدل النمو</th></tr></thead>
+          <tbody>
+            <tr><td>يناير 2026</td><td style="color:var(--success)">$128,400</td><td style="color:var(--primary)">$6,420</td><td style="color:var(--danger)">$2,100</td><td>2,840</td><td><span class="badge badge-active">+12%</span></td></tr>
+            <tr><td>فبراير 2026</td><td style="color:var(--success)">$142,800</td><td style="color:var(--primary)">$7,140</td><td style="color:var(--danger)">$1,800</td><td>3,120</td><td><span class="badge badge-active">+11.2%</span></td></tr>
+            <tr><td>مارس 2026</td><td style="color:var(--success)">$156,200</td><td style="color:var(--primary)">$7,810</td><td style="color:var(--danger)">$2,400</td><td>3,450</td><td><span class="badge badge-active">+9.4%</span></td></tr>
+            <tr><td>أبريل 2026</td><td style="color:var(--success)">$168,900</td><td style="color:var(--primary)">$8,445</td><td style="color:var(--danger)">$3,200</td><td>3,890</td><td><span class="badge badge-active">+8.1%</span></td></tr>
+            <tr><td>مايو 2026</td><td style="color:var(--success)">$245,700</td><td style="color:var(--primary)">$12,285</td><td style="color:var(--danger)">$2,900</td><td>5,240</td><td><span class="badge badge-active">+45.4%</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ======================================
+         PAGE 10: COMMISSIONS
+    ====================================== -->
+    <div class="admin-page" id="page-commissions">
+      <div class="page-header">
+        <div class="page-title">
+          <div class="page-title-icon" style="background:rgba(245,158,11,0.15)"><i class="fas fa-percent" style="color:var(--gold)"></i></div>
+          إدارة العمولات
+        </div>
+      </div>
+      <div class="form-section">
+        <div class="form-section-title"><i class="fas fa-sliders-h"></i> إعدادات نسب العمولة</div>
+        <div class="form-grid">
+          <div class="form-group"><label class="form-label">العمولة الافتراضية (%)</label><input type="number" class="form-control" value="5" min="0" max="20" step="0.5" /></div>
+          <div class="form-group"><label class="form-label">عمولة الإلكترونيات (%)</label><input type="number" class="form-control" value="4" min="0" max="20" /></div>
+          <div class="form-group"><label class="form-label">عمولة الملابس (%)</label><input type="number" class="form-control" value="6" min="0" max="20" /></div>
+          <div class="form-group"><label class="form-label">عمولة الآلات (%)</label><input type="number" class="form-control" value="3" min="0" max="20" /></div>
+          <div class="form-group"><label class="form-label">عمولة الأغذية (%)</label><input type="number" class="form-control" value="5.5" min="0" max="20" /></div>
+          <div class="form-group"><label class="form-label">الحد الأدنى للعمولة ($)</label><input type="number" class="form-control" value="2" /></div>
+        </div>
+        <button class="btn btn-primary" style="margin-top:8px" onclick="saveCommissions()"><i class="fas fa-save"></i> حفظ الإعدادات</button>
+      </div>
+      <div class="chart-card">
+        <div class="chart-header"><div class="chart-title"><i class="fas fa-history"></i> أحدث عمولات محصّلة</div></div>
+        <table class="data-table">
+          <thead><tr><th>الطلب</th><th>المورد</th><th>قيمة الطلب</th><th>العمولة</th><th>النسبة</th><th>الحالة</th><th>التاريخ</th></tr></thead>
+          <tbody id="commissionsBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ======================================
+         PAGE 11: SETTINGS
+    ====================================== -->
+    <div class="admin-page" id="page-settings">
+      <div class="page-header">
+        <div class="page-title">
+          <div class="page-title-icon" style="background:rgba(255,107,53,0.15)"><i class="fas fa-cog" style="color:var(--primary)"></i></div>
+          إعدادات المنصة
+        </div>
+        <div class="page-actions">
+          <button class="btn btn-primary" onclick="saveAllSettings()"><i class="fas fa-save"></i> حفظ جميع الإعدادات</button>
+        </div>
+      </div>
+
+      <!-- ===== LOGO / IDENTITY SECTION ===== -->
+      <div class="form-section" id="logoSection">
+        <div class="form-section-title"><i class="fas fa-paint-brush"></i> هوية المنصة — الشعار</div>
+
+        <!-- Current Logo Preview -->
+        <div style="display:flex;align-items:flex-start;gap:32px;flex-wrap:wrap;margin-bottom:24px">
+          <!-- Preview box -->
+          <div style="flex-shrink:0">
+            <div style="font-size:12px;color:var(--muted);margin-bottom:8px;font-weight:600;text-transform:uppercase;letter-spacing:.5px">معاينة الشعار الحالي</div>
+            <div id="logoPreviewBox" style="background:var(--bg-light);border:2px dashed var(--border);border-radius:var(--radius-md);width:220px;height:80px;display:flex;align-items:center;justify-content:center;padding:12px;transition:var(--transition)">
+              <a class="logo" style="pointer-events:none">
+                <div class="logo-icon"><i class="fas fa-globe-asia"></i></div>
+                Trade<span>Hub</span>
+              </a>
+            </div>
+            <div style="font-size:11px;color:var(--muted);margin-top:6px;text-align:center">كما يظهر في هيدر الموقع</div>
+          </div>
+
+          <!-- Upload + URL inputs -->
+          <div style="flex:1;min-width:260px">
+            <!-- File upload -->
+            <div class="form-group" style="margin-bottom:16px">
+              <label class="form-label"><i class="fas fa-upload" style="color:var(--primary)"></i> رفع صورة جديدة (PNG / SVG / JPG / WEBP)</label>
+              <div id="logoDropZone" style="border:2px dashed var(--border);border-radius:var(--radius-md);padding:20px 16px;text-align:center;cursor:pointer;transition:var(--transition);background:var(--bg-light)"
+                   onclick="document.getElementById('logoFileInput').click()"
+                   ondragover="event.preventDefault();this.style.borderColor='var(--primary)';this.style.background='var(--primary-light)'"
+                   ondragleave="this.style.borderColor='var(--border)';this.style.background='var(--bg-light)'"
+                   ondrop="handleLogoDrop(event)">
+                <i class="fas fa-cloud-upload-alt" style="font-size:28px;color:var(--muted);margin-bottom:8px;display:block"></i>
+                <span style="color:var(--muted);font-size:13px">اسحب الصورة هنا أو <strong style="color:var(--primary)">انقر للاختيار</strong></span><br>
+                <span style="font-size:11px;color:var(--text-light)">الحجم الأقصى: 2MB — يُفضَّل 200×60 بكسل</span>
+              </div>
+              <input type="file" id="logoFileInput" accept="image/png,image/jpeg,image/svg+xml,image/webp" style="display:none" onchange="handleLogoFile(this.files[0])">
+            </div>
+
+            <!-- URL input -->
+            <div class="form-group" style="margin-bottom:16px">
+              <label class="form-label"><i class="fas fa-link" style="color:var(--accent)"></i> أو أدخل رابط الصورة (URL)</label>
+              <div style="display:flex;gap:8px">
+                <input type="url" class="form-control" id="logoUrlInput" placeholder="https://example.com/logo.png" oninput="previewLogoFromUrl(this.value)" style="flex:1">
+                <button class="btn btn-sm" style="background:var(--accent);color:white;white-space:nowrap" onclick="previewLogoFromUrl(document.getElementById('logoUrlInput').value)">
+                  <i class="fas fa-eye"></i> معاينة
+                </button>
+              </div>
+            </div>
+
+            <!-- Logo text fallback -->
+            <div class="form-group" style="margin-bottom:16px">
+              <label class="form-label"><i class="fas fa-font" style="color:var(--gold)"></i> النص الاحتياطي (يظهر إن تعذر تحميل الصورة)</label>
+              <input type="text" class="form-control" id="logoTextInput" placeholder="TradeHub Pro" value="TradeHub Pro">
+            </div>
+
+            <!-- Tagline -->
+            <div class="form-group" style="margin-bottom:0">
+              <label class="form-label"><i class="fas fa-quote-right" style="color:var(--muted)"></i> الشعار النصي (Tagline)</label>
+              <input type="text" class="form-control" id="logoTaglineInput" placeholder="منصة التجارة الإلكترونية العالمية">
+            </div>
+          </div>
+        </div>
+
+        <!-- Favicon -->
+        <div class="form-group" style="border-top:1px solid var(--border);padding-top:20px;margin-top:4px">
+          <label class="form-label"><i class="fas fa-star" style="color:var(--gold)"></i> أيقونة المتصفح (Favicon URL)</label>
+          <div style="display:flex;gap:12px;align-items:center">
+            <input type="url" class="form-control" id="logoFaviconInput" placeholder="https://example.com/favicon.ico" style="flex:1">
+            <div id="faviconPreview" style="width:32px;height:32px;border:1px solid var(--border);border-radius:6px;display:flex;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0;background:var(--bg-light)">
+              <i class="fas fa-star" style="color:var(--muted);font-size:14px"></i>
+            </div>
+          </div>
+          <div style="font-size:11px;color:var(--muted);margin-top:4px">يظهر في تبويب المتصفح بجانب اسم الصفحة</div>
+        </div>
+
+        <!-- Hidden: current base64 / url storage -->
+        <input type="hidden" id="logoCurrentValue" value="">
+
+        <!-- Action buttons -->
+        <div style="display:flex;gap:12px;margin-top:20px;flex-wrap:wrap">
+          <button class="btn btn-primary" onclick="savePlatformLogo()">
+            <i class="fas fa-save"></i> حفظ هوية المنصة
+          </button>
+          <button class="btn btn-outline-secondary" onclick="resetLogoPreview()">
+            <i class="fas fa-undo"></i> إعادة تعيين
+          </button>
+          <button class="btn btn-sm" style="background:#fee2e2;color:#dc2626;border:1px solid #fca5a5" onclick="clearPlatformLogo()">
+            <i class="fas fa-trash"></i> حذف الشعار الحالي
+          </button>
+        </div>
+
+        <!-- Status message -->
+        <div id="logoSaveStatus" style="display:none;margin-top:14px;padding:10px 14px;border-radius:var(--radius-sm);font-size:13px;font-weight:600"></div>
+      </div>
+
+      <!-- General Settings -->
+      <div class="form-section">
+        <div class="form-section-title"><i class="fas fa-globe"></i> الإعدادات العامة</div>
+        <div class="form-grid">
+          <div class="form-group"><label class="form-label">اسم المنصة</label><input type="text" class="form-control" value="TradeHub Pro" id="setting-platform_name" /></div>
+          <div class="form-group"><label class="form-label">بريد الدعم</label><input type="email" class="form-control" value="support@tradehub.com" id="setting-support_email" /></div>
+          <div class="form-group"><label class="form-label">رقم الهاتف</label><input type="tel" class="form-control" value="+966 12 345 6789" /></div>
+          <div class="form-group"><label class="form-label">المنطقة الزمنية</label>
+            <select class="form-control"><option>Asia/Riyadh (GMT+3)</option><option>UTC</option><option>America/New_York</option></select>
+          </div>
+          <div class="form-group"><label class="form-label">العملة الافتراضية</label>
+            <select class="form-control"><option>USD - دولار أمريكي</option><option>SAR - ريال سعودي</option><option>EUR - يورو</option></select>
+          </div>
+          <div class="form-group"><label class="form-label">لغة الواجهة الافتراضية</label>
+            <select class="form-control"><option>العربية</option><option>English</option></select>
+          </div>
+        </div>
+      </div>
+
+      <!-- Switches -->
+      <div class="form-section">
+        <div class="form-section-title"><i class="fas fa-toggle-on"></i> التحكم في الخدمات</div>
+        <div class="settings-grid" id="settingsSwitches">
+          <div class="setting-item">
+            <div><div class="setting-label">وضع الصيانة</div><div class="setting-desc">إيقاف الموقع مؤقتاً للصيانة</div></div>
+            <label class="toggle-switch"><input type="checkbox" id="toggle-maintenance"><span class="toggle-slider"></span></label>
+          </div>
+          <div class="setting-item">
+            <div><div class="setting-label">قبول الموردين تلقائياً</div><div class="setting-desc">قبول طلبات الموردين الجدد دون مراجعة</div></div>
+            <label class="toggle-switch"><input type="checkbox" id="toggle-auto_sellers"><span class="toggle-slider"></span></label>
+          </div>
+          <div class="setting-item">
+            <div><div class="setting-label">تفعيل المدفوعات</div><div class="setting-desc">السماح بإجراء المدفوعات على المنصة</div></div>
+            <label class="toggle-switch"><input type="checkbox" checked id="toggle-payments"><span class="toggle-slider"></span></label>
+          </div>
+          <div class="setting-item">
+            <div><div class="setting-label">التسجيل مفتوح</div><div class="setting-desc">السماح بإنشاء حسابات جديدة</div></div>
+            <label class="toggle-switch"><input type="checkbox" checked id="toggle-registration"><span class="toggle-slider"></span></label>
+          </div>
+          <div class="setting-item">
+            <div><div class="setting-label">إشعارات البريد الإلكتروني</div><div class="setting-desc">إرسال إشعارات تلقائية للمستخدمين</div></div>
+            <label class="toggle-switch"><input type="checkbox" checked><span class="toggle-slider"></span></label>
+          </div>
+          <div class="setting-item">
+            <div><div class="setting-label">نظام التقييمات</div><div class="setting-desc">السماح للمستخدمين بترك التقييمات</div></div>
+            <label class="toggle-switch"><input type="checkbox" checked><span class="toggle-slider"></span></label>
+          </div>
+        </div>
+      </div>
+
+      <!-- Financial Settings -->
+      <div class="form-section">
+        <div class="form-section-title"><i class="fas fa-dollar-sign"></i> الإعدادات المالية</div>
+        <div class="form-grid">
+          <div class="form-group"><label class="form-label">نسبة العمولة الافتراضية (%)</label><input type="number" class="form-control" value="5" id="setting-commission_rate" /></div>
+          <div class="form-group"><label class="form-label">الحد الأدنى للسحب ($)</label><input type="number" class="form-control" value="100" id="setting-min_withdrawal" /></div>
+          <div class="form-group"><label class="form-label">الحد الأقصى للطلب ($)</label><input type="number" class="form-control" value="500000" id="setting-max_order_amount" /></div>
+          <div class="form-group"><label class="form-label">منتجات مجانية للمورد</label><input type="number" class="form-control" value="50" id="setting-max_products_free" /></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ======================================
+         PAGE 12: ADMINS
+    ====================================== -->
+    <div class="admin-page" id="page-admins">
+      <div class="page-header">
+        <div class="page-title">
+          <div class="page-title-icon" style="background:rgba(245,158,11,0.15)"><i class="fas fa-user-shield" style="color:var(--gold)"></i></div>
+          مدراء النظام
+        </div>
+        <div class="page-actions">
+          <button class="btn btn-primary btn-sm" onclick="openModal('addAdminModal')"><i class="fas fa-user-plus"></i> إضافة مدير</button>
+        </div>
+      </div>
+      <div class="admin-table-wrap">
+        <div style="overflow-x:auto">
+          <table class="data-table">
+            <thead><tr><th>المدير</th><th>البريد</th><th>الدور</th><th>آخر دخول</th><th>الصلاحيات</th><th>الحالة</th><th>إجراءات</th></tr></thead>
+            <tbody>
+              <tr>
+                <td><div class="user-cell"><div class="user-av" style="background:linear-gradient(135deg,var(--primary),var(--gold))">م</div><strong>المدير العام</strong></div></td>
+                <td style="color:var(--muted)">admin@tradehub.com</td>
+                <td><span class="badge badge-admin"><i class="fas fa-crown"></i> Super Admin</span></td>
+                <td style="color:var(--muted)">الآن</td>
+                <td><span style="color:var(--success);font-size:12px"><i class="fas fa-check-circle"></i> كاملة</span></td>
+                <td><span class="badge badge-active">نشط</span></td>
+                <td><div class="action-btns"><button class="act-btn edit" title="تعديل"><i class="fas fa-edit"></i></button></div></td>
+              </tr>
+              <tr>
+                <td><div class="user-cell"><div class="user-av" style="background:rgba(139,92,246,0.8)">س</div>سارة المشرف</div></td>
+                <td style="color:var(--muted)">sara.mod@tradehub.com</td>
+                <td><span class="badge badge-seller">Moderator</span></td>
+                <td style="color:var(--muted)">منذ ساعتين</td>
+                <td><span style="color:var(--warning);font-size:12px"><i class="fas fa-check-circle"></i> محدودة</span></td>
+                <td><span class="badge badge-active">نشط</span></td>
+                <td><div class="action-btns"><button class="act-btn edit"><i class="fas fa-edit"></i></button><button class="act-btn delete" onclick="confirmDelete('مدير')"><i class="fas fa-trash"></i></button></div></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ======================================
+         PAGE 13: LOGS
+    ====================================== -->
+    <div class="admin-page" id="page-logs">
+      <div class="page-header">
+        <div class="page-title">
+          <div class="page-title-icon" style="background:rgba(59,130,246,0.15)"><i class="fas fa-terminal" style="color:var(--info)"></i></div>
+          سجلات النظام
+        </div>
+        <div class="page-actions">
+          <button class="btn btn-ghost btn-sm" onclick="exportLogsCSV()"><i class="fas fa-download"></i> تصدير</button>
+          <button class="btn btn-danger btn-sm" onclick="clearLogs()"><i class="fas fa-trash"></i> مسح السجلات</button>
+        </div>
+      </div>
+      <!-- Log Filters -->
+      <div class="admin-table-wrap" style="margin-bottom:16px">
+        <div style="padding:14px 20px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;border-bottom:1px solid var(--border)">
+          <input class="tbl-search" placeholder="بحث في السجلات..." id="logsSearch" oninput="filterLogs()" style="min-width:220px"/>
+          <div style="display:flex;gap:6px">
+            <button class="chart-tab active" onclick="filterLogsByType('ALL',this)" id="logTabAll">الكل</button>
+            <button class="chart-tab" onclick="filterLogsByType('INFO',this)" style="color:#68d391;border-color:rgba(104,211,145,0.3)">INFO</button>
+            <button class="chart-tab" onclick="filterLogsByType('WARN',this)" style="color:#f6ad55;border-color:rgba(246,173,85,0.3)">WARN</button>
+            <button class="chart-tab" onclick="filterLogsByType('ERROR',this)" style="color:#fc8181;border-color:rgba(252,129,129,0.3)">ERROR</button>
+          </div>
+          <div style="margin-right:auto;font-size:12px;color:var(--muted)" id="logsCounter">14 سجل</div>
+        </div>
+        <div style="background:rgba(0,0,0,0.45);padding:16px 20px;font-family:'Courier New',monospace;font-size:12px;color:#a0aec0;max-height:520px;overflow-y:auto;line-height:2" id="systemLogsFeed">
+          <div data-type="INFO" style="color:#68d391">[2026-05-19 09:41:23] <span style="background:rgba(104,211,145,0.1);padding:1px 6px;border-radius:3px;color:#68d391;font-size:10px">INFO</span> Admin login — admin@tradehub.com (IP: 192.168.1.1)</div>
+          <div data-type="INFO" style="color:#63b3ed">[2026-05-19 09:38:10] <span style="background:rgba(99,179,237,0.1);padding:1px 6px;border-radius:3px;color:#63b3ed;font-size:10px">INFO</span> New order TH-2026-0541 created — $2,750</div>
+          <div data-type="WARN" style="color:#f6ad55">[2026-05-19 09:35:44] <span style="background:rgba(246,173,85,0.1);padding:1px 6px;border-radius:3px;color:#f6ad55;font-size:10px">WARN</span> Failed login attempt — unknown@test.com (3 tries)</div>
+          <div data-type="INFO" style="color:#68d391">[2026-05-19 09:30:12] <span style="background:rgba(104,211,145,0.1);padding:1px 6px;border-radius:3px;color:#68d391;font-size:10px">INFO</span> New seller registered — Liu Trading Co.</div>
+          <div data-type="ERROR" style="color:#fc8181">[2026-05-19 09:25:08] <span style="background:rgba(252,129,129,0.1);padding:1px 6px;border-radius:3px;color:#fc8181;font-size:10px">ERROR</span> Payment gateway timeout — order TH-2026-0538</div>
+          <div data-type="INFO" style="color:#68d391">[2026-05-19 09:20:55] <span style="background:rgba(104,211,145,0.1);padding:1px 6px;border-radius:3px;color:#68d391;font-size:10px">INFO</span> Product approved — Solar Power Bank (ID: p12)</div>
+          <div data-type="INFO" style="color:#63b3ed">[2026-05-19 09:15:30] <span style="background:rgba(99,179,237,0.1);padding:1px 6px;border-radius:3px;color:#63b3ed;font-size:10px">INFO</span> Refund processed — TH-2026-0534 — $1,500</div>
+          <div data-type="WARN" style="color:#f6ad55">[2026-05-19 09:10:14] <span style="background:rgba(246,173,85,0.1);padding:1px 6px;border-radius:3px;color:#f6ad55;font-size:10px">WARN</span> High traffic detected — 1,240 concurrent users</div>
+          <div data-type="INFO" style="color:#68d391">[2026-05-19 09:05:22] <span style="background:rgba(104,211,145,0.1);padding:1px 6px;border-radius:3px;color:#68d391;font-size:10px">INFO</span> Daily backup completed — 245MB</div>
+          <div data-type="INFO" style="color:#68d391">[2026-05-19 08:58:41] <span style="background:rgba(104,211,145,0.1);padding:1px 6px;border-radius:3px;color:#68d391;font-size:10px">INFO</span> Report #r2 escalated to critical</div>
+          <div data-type="INFO" style="color:#63b3ed">[2026-05-19 08:50:17] <span style="background:rgba(99,179,237,0.1);padding:1px 6px;border-radius:3px;color:#63b3ed;font-size:10px">INFO</span> 18 new products published by TechPro Electronics</div>
+          <div data-type="ERROR" style="color:#fc8181">[2026-05-19 08:44:03] <span style="background:rgba(252,129,129,0.1);padding:1px 6px;border-radius:3px;color:#fc8181;font-size:10px">ERROR</span> SMS gateway connection lost — retrying...</div>
+          <div data-type="INFO" style="color:#68d391">[2026-05-19 08:43:56] <span style="background:rgba(104,211,145,0.1);padding:1px 6px;border-radius:3px;color:#68d391;font-size:10px">INFO</span> SMS gateway reconnected successfully</div>
+          <div data-type="INFO" style="color:#63b3ed">[2026-05-19 08:30:00] <span style="background:rgba(99,179,237,0.1);padding:1px 6px;border-radius:3px;color:#63b3ed;font-size:10px">INFO</span> System health check — All services running ✓</div>
+          <div data-type="INFO" style="color:#68d391">[2026-05-19 08:15:40] <span style="background:rgba(104,211,145,0.1);padding:1px 6px;border-radius:3px;color:#68d391;font-size:10px">INFO</span> New support ticket TK-2026-0041 created</div>
+          <div data-type="WARN" style="color:#f6ad55">[2026-05-19 08:02:18] <span style="background:rgba(246,173,85,0.1);padding:1px 6px;border-radius:3px;color:#f6ad55;font-size:10px">WARN</span> Disk usage at 78% — consider cleanup</div>
+          <div data-type="INFO" style="color:#68d391">[2026-05-19 07:45:00] <span style="background:rgba(104,211,145,0.1);padding:1px 6px;border-radius:3px;color:#68d391;font-size:10px">INFO</span> Auto-backup started</div>
+          <div data-type="ERROR" style="color:#fc8181">[2026-05-18 23:14:07] <span style="background:rgba(252,129,129,0.1);padding:1px 6px;border-radius:3px;color:#fc8181;font-size:10px">ERROR</span> Database query timeout — users table (2400ms)</div>
+          <div data-type="INFO" style="color:#68d391">[2026-05-18 22:50:33] <span style="background:rgba(104,211,145,0.1);padding:1px 6px;border-radius:3px;color:#68d391;font-size:10px">INFO</span> User banned — spam@bot.com (abuse detected)</div>
+          <div data-type="WARN" style="color:#f6ad55">[2026-05-18 21:30:12] <span style="background:rgba(246,173,85,0.1);padding:1px 6px;border-radius:3px;color:#f6ad55;font-size:10px">WARN</span> Unusual order volume from IP: 45.22.198.10</div>
+        </div>
+        <!-- System Health Bar -->
+        <div style="padding:14px 20px;border-top:1px solid var(--border);display:flex;gap:24px;align-items:center;flex-wrap:wrap">
+          <div style="font-size:12px;color:var(--muted)"><i class="fas fa-server" style="color:var(--success);margin-left:6px"></i>الخادم: <strong style="color:var(--success)">يعمل بشكل طبيعي</strong></div>
+          <div style="font-size:12px;color:var(--muted)"><i class="fas fa-database" style="color:var(--info);margin-left:6px"></i>قاعدة البيانات: <strong style="color:var(--info)">متصلة</strong></div>
+          <div style="font-size:12px;color:var(--muted)"><i class="fas fa-hdd" style="color:var(--warning);margin-left:6px"></i>التخزين: <strong style="color:var(--warning)">78%</strong></div>
+          <div style="font-size:12px;color:var(--muted)"><i class="fas fa-memory" style="color:var(--success);margin-left:6px"></i>الذاكرة: <strong style="color:var(--success)">42%</strong></div>
+          <div style="margin-right:auto;font-size:11px;color:var(--muted)">آخر تحديث: <span id="logsLastUpdate">—</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ======================================
+         PAGE 14: ACTIVITY
+    ====================================== -->
+    <div class="admin-page" id="page-activity">
+      <div class="page-header">
+        <div class="page-title">
+          <div class="page-title-icon" style="background:rgba(16,185,129,0.15)"><i class="fas fa-stream" style="color:var(--success)"></i></div>
+          سجل النشاط الكامل
+        </div>
+      </div>
+      <div class="chart-card" id="fullActivityFeed"></div>
+    </div>
+
+    <!-- ======================================
+         PAGE 15: SUPPORT TICKETS
+    ====================================== -->
+    <div class="admin-page" id="page-tickets">
+      <div class="page-header">
+        <div class="page-title">
+          <div class="page-title-icon" style="background:rgba(59,130,246,0.15)"><i class="fas fa-headset" style="color:var(--info)"></i></div>
+          نظام الدعم الفني
+        </div>
+        <div class="page-actions">
+          <button class="btn btn-ghost btn-sm" onclick="exportTicketsCSV()"><i class="fas fa-file-csv"></i> تصدير CSV</button>
+          <button class="btn btn-primary btn-sm" onclick="openModal('addTicketModal')"><i class="fas fa-plus"></i> تذكرة جديدة</button>
+        </div>
+      </div>
+      <!-- Stats -->
+      <div class="kpi-grid" style="grid-template-columns:repeat(4,1fr);margin-bottom:20px">
+        <div class="kpi-card" style="padding:16px"><div style="font-size:24px;font-weight:900;color:var(--danger)" id="tk-open">—</div><div style="font-size:12px;color:var(--muted)">مفتوحة</div></div>
+        <div class="kpi-card" style="padding:16px"><div style="font-size:24px;font-weight:900;color:var(--warning)" id="tk-inprog">—</div><div style="font-size:12px;color:var(--muted)">قيد المعالجة</div></div>
+        <div class="kpi-card" style="padding:16px"><div style="font-size:24px;font-weight:900;color:var(--success)" id="tk-resolved">—</div><div style="font-size:12px;color:var(--muted)">محلولة</div></div>
+        <div class="kpi-card" style="padding:16px"><div style="font-size:24px;font-weight:900;color:var(--muted)" id="tk-closed">—</div><div style="font-size:12px;color:var(--muted)">مغلقة</div></div>
+      </div>
+      <div class="admin-table-wrap">
+        <div class="table-header">
+          <div class="table-title"><i class="fas fa-ticket-alt" style="color:var(--info)"></i> تذاكر الدعم</div>
+          <div class="table-controls">
+            <input class="tbl-search" placeholder="بحث في التذاكر..." id="ticketsSearch" oninput="filterTickets()" />
+            <select class="tbl-select" id="ticketsCatFilter" onchange="filterTickets()">
+              <option value="">جميع الفئات</option>
+              <option value="payment">المدفوعات</option>
+              <option value="product">المنتجات</option>
+              <option value="account">الحساب</option>
+              <option value="shipping">الشحن</option>
+              <option value="other">أخرى</option>
+            </select>
+            <select class="tbl-select" id="ticketsStatusFilter" onchange="filterTickets()">
+              <option value="">جميع الحالات</option>
+              <option value="open">مفتوحة</option>
+              <option value="in_progress">قيد المعالجة</option>
+              <option value="resolved">محلولة</option>
+              <option value="closed">مغلقة</option>
+            </select>
+            <select class="tbl-select" id="ticketsPriorityFilter" onchange="filterTickets()">
+              <option value="">جميع الأولويات</option>
+              <option value="critical">حرجة</option>
+              <option value="high">عالية</option>
+              <option value="medium">متوسطة</option>
+              <option value="low">منخفضة</option>
+            </select>
+          </div>
+        </div>
+        <div style="overflow-x:auto">
+          <table class="data-table">
+            <thead>
+              <tr><th>رقم التذكرة</th><th>المستخدم</th><th>الدور</th><th>الموضوع</th><th>الفئة</th><th>الأولوية</th><th>الحالة</th><th>المكلّف</th><th>التاريخ</th><th>إجراءات</th></tr>
+            </thead>
+            <tbody id="ticketsTableBody">
+              <tr><td colspan="10" style="text-align:center;padding:30px;color:var(--muted)"><i class="fas fa-spinner fa-spin"></i> جارٍ التحميل...</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="tbl-pagination"><span id="ticketsPagInfo">—</span></div>
+      </div>
+    </div>
+
+    <!-- ======================================
+         PAGE 16: REVIEWS MANAGEMENT
+    ====================================== -->
+    <div class="admin-page" id="page-reviews">
+      <div class="page-header">
+        <div class="page-title">
+          <div class="page-title-icon" style="background:rgba(245,158,11,0.15)"><i class="fas fa-star" style="color:var(--gold)"></i></div>
+          إدارة التقييمات والمراجعات
+        </div>
+        <div class="page-actions">
+          <button class="btn btn-ghost btn-sm" onclick="exportReviewsCSV()"><i class="fas fa-file-csv"></i> تصدير CSV</button>
+        </div>
+      </div>
+      <!-- Stats -->
+      <div class="kpi-grid" style="grid-template-columns:repeat(4,1fr);margin-bottom:20px">
+        <div class="kpi-card" style="padding:16px"><div style="font-size:24px;font-weight:900;color:var(--warning)" id="rv-pending">—</div><div style="font-size:12px;color:var(--muted)">بانتظار الموافقة</div></div>
+        <div class="kpi-card" style="padding:16px"><div style="font-size:24px;font-weight:900;color:var(--success)" id="rv-approved">—</div><div style="font-size:12px;color:var(--muted)">معتمدة</div></div>
+        <div class="kpi-card" style="padding:16px"><div style="font-size:24px;font-weight:900;color:var(--danger)" id="rv-flagged">—</div><div style="font-size:12px;color:var(--muted)">مُبلَّغ عنها</div></div>
+        <div class="kpi-card" style="padding:16px"><div style="font-size:24px;font-weight:900;color:var(--gold)" id="rv-avg-rating">—</div><div style="font-size:12px;color:var(--muted)">متوسط التقييم</div></div>
+      </div>
+      <div class="admin-table-wrap">
+        <div class="table-header">
+          <div class="table-title"><i class="fas fa-star" style="color:var(--gold)"></i> التقييمات والمراجعات</div>
+          <div class="table-controls">
+            <input class="tbl-search" placeholder="بحث في التقييمات..." id="reviewsSearch" oninput="filterReviewsPage()" />
+            <select class="tbl-select" id="reviewsStatusFilter" onchange="filterReviewsPage()">
+              <option value="">جميع الحالات</option>
+              <option value="pending">بانتظار الموافقة</option>
+              <option value="approved">معتمدة</option>
+              <option value="flagged">مُبلَّغ عنها</option>
+              <option value="rejected">مرفوضة</option>
+            </select>
+            <select class="tbl-select" id="reviewsRatingFilter" onchange="filterReviewsPage()">
+              <option value="">جميع التقييمات</option>
+              <option value="5">5 نجوم</option>
+              <option value="4">4 نجوم</option>
+              <option value="3">3 نجوم</option>
+              <option value="2">2 نجوم</option>
+              <option value="1">1 نجمة</option>
+            </select>
+          </div>
+        </div>
+        <div style="overflow-x:auto">
+          <table class="data-table">
+            <thead>
+              <tr><th>المنتج</th><th>المراجع</th><th>التقييم</th><th>المحتوى</th><th>الحالة</th><th>مُبلَّغ؟</th><th>مفيد</th><th>التاريخ</th><th>إجراءات</th></tr>
+            </thead>
+            <tbody id="reviewsTableBody">
+              <tr><td colspan="9" style="text-align:center;padding:30px;color:var(--muted)"><i class="fas fa-spinner fa-spin"></i> جارٍ التحميل...</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="tbl-pagination"><span id="reviewsPagInfo">—</span></div>
+      </div>
+    </div>
+
+    <!-- ======================================
+         PAGE 17: PENDING USERS APPROVAL
+    ====================================== -->
+    <div class="admin-page" id="page-pending">
+      <div class="page-header">
+        <div class="page-title">
+          <div class="page-title-icon" style="background:rgba(245,158,11,0.15)">
+            <i class="fas fa-user-clock" style="color:var(--gold)"></i>
+          </div>
+          طلبات التسجيل — موافقة المدير العام
+        </div>
+        <div class="page-actions">
+          <button class="btn btn-ghost btn-sm" onclick="loadPendingUsers()"><i class="fas fa-sync-alt"></i> تحديث</button>
+          <button class="btn btn-ghost btn-sm" onclick="exportPendingCSV()"><i class="fas fa-file-csv"></i> تصدير CSV</button>
+        </div>
+      </div>
+
+      <!-- KPI row -->
+      <div class="kpi-grid" style="grid-template-columns:repeat(4,1fr);margin-bottom:20px">
+        <div class="kpi-card" style="padding:16px">
+          <div style="font-size:28px;font-weight:900;color:var(--warning)" id="pu-pending">—</div>
+          <div style="font-size:12px;color:var(--muted)">بانتظار الموافقة</div>
+        </div>
+        <div class="kpi-card" style="padding:16px">
+          <div style="font-size:28px;font-weight:900;color:var(--success)" id="pu-approved">—</div>
+          <div style="font-size:12px;color:var(--muted)">تم قبولهم</div>
+        </div>
+        <div class="kpi-card" style="padding:16px">
+          <div style="font-size:28px;font-weight:900;color:var(--danger)" id="pu-rejected">—</div>
+          <div style="font-size:12px;color:var(--muted)">مرفوضون</div>
+        </div>
+        <div class="kpi-card" style="padding:16px">
+          <div style="font-size:28px;font-weight:900;color:var(--info)" id="pu-total">—</div>
+          <div style="font-size:12px;color:var(--muted)">إجمالي الطلبات</div>
+        </div>
+      </div>
+
+      <!-- Filters -->
+      <div class="admin-table-wrap">
+        <div class="table-header">
+          <div class="table-title">
+            <i class="fas fa-user-clock" style="color:var(--gold)"></i>
+            طلبات انتظار الموافقة
+          </div>
+          <div class="table-controls">
+            <input class="tbl-search" placeholder="بحث بالاسم أو البريد..." id="pendingSearch" oninput="filterPendingUsers()" />
+            <select class="tbl-select" id="pendingStatusFilter" onchange="filterPendingUsers()">
+              <option value="">جميع الحالات</option>
+              <option value="pending" selected>بانتظار الموافقة</option>
+              <option value="approved">تمت الموافقة</option>
+              <option value="rejected">مرفوض</option>
+            </select>
+            <select class="tbl-select" id="pendingRoleFilter" onchange="filterPendingUsers()">
+              <option value="">جميع الأدوار</option>
+              <option value="buyer">مشتري</option>
+              <option value="seller">مورد / بائع</option>
+            </select>
+          </div>
+        </div>
+
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>الاسم</th>
+              <th>البريد الإلكتروني</th>
+              <th>الدور</th>
+              <th>الدولة</th>
+              <th>الشركة</th>
+              <th>تاريخ الطلب</th>
+              <th>الحالة</th>
+              <th>الإجراءات</th>
+            </tr>
+          </thead>
+          <tbody id="pendingUsersTableBody">
+            <tr><td colspan="9" style="text-align:center;padding:30px;color:var(--muted)">
+              <i class="fas fa-spinner fa-spin"></i> جارٍ التحميل...
+            </td></tr>
+          </tbody>
+        </table>
+        <div class="tbl-pagination" id="pendingPagInfo"><span>—</span></div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<!-- ===== MODALS ===== -->
+<!-- Add User Modal -->
+<div class="modal-overlay" id="addUserModal">
+  <div class="admin-modal">
+    <div class="modal-head">
+      <h3><i class="fas fa-user-plus"></i> إضافة مستخدم جديد</h3>
+      <button class="modal-close" onclick="closeModal('addUserModal')">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="form-group"><label class="form-label">الاسم الكامل</label><input type="text" class="form-control" id="newUserName" placeholder="الاسم الكامل" /></div>
+        <div class="form-group"><label class="form-label">البريد الإلكتروني</label><input type="email" class="form-control" id="newUserEmail" placeholder="email@example.com" /></div>
+        <div class="form-group"><label class="form-label">الدور</label>
+          <select class="form-control" id="newUserRole"><option value="buyer">مشتري</option><option value="seller">بائع / مورد</option></select>
+        </div>
+        <div class="form-group"><label class="form-label">الدولة</label>
+          <select class="form-control" id="newUserCountry">
+            <option>السعودية</option><option>الإمارات</option><option>مصر</option><option>الكويت</option><option>الأردن</option><option>الصين</option><option>ألمانيا</option>
+          </select>
+        </div>
+        <div class="form-group form-full"><label class="form-label">كلمة المرور الأولية</label><input type="password" class="form-control" placeholder="••••••••" /></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('addUserModal')">إلغاء</button>
+      <button class="btn btn-primary" onclick="addUser()"><i class="fas fa-save"></i> إضافة المستخدم</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add Admin Modal -->
+<div class="modal-overlay" id="addAdminModal">
+  <div class="admin-modal">
+    <div class="modal-head">
+      <h3><i class="fas fa-user-shield"></i> إضافة مدير جديد</h3>
+      <button class="modal-close" onclick="closeModal('addAdminModal')">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="form-group"><label class="form-label">الاسم</label><input type="text" class="form-control" placeholder="اسم المدير" /></div>
+        <div class="form-group"><label class="form-label">البريد الإلكتروني</label><input type="email" class="form-control" placeholder="admin@tradehub.com" /></div>
+        <div class="form-group"><label class="form-label">الدور</label>
+          <select class="form-control"><option>Moderator</option><option>Admin</option><option>Super Admin</option></select>
+        </div>
+        <div class="form-group"><label class="form-label">كلمة المرور</label><input type="password" class="form-control" placeholder="••••••••" /></div>
+        <div class="form-group form-full"><label class="form-label">الصلاحيات</label>
+          <div style="display:flex;flex-direction:column;gap:8px;margin-top:4px">
+            <label style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--light);cursor:pointer"><input type="checkbox" checked style="accent-color:var(--primary)"> إدارة المستخدمين</label>
+            <label style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--light);cursor:pointer"><input type="checkbox" checked style="accent-color:var(--primary)"> إدارة المنتجات</label>
+            <label style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--light);cursor:pointer"><input type="checkbox" style="accent-color:var(--primary)"> إدارة الإعدادات</label>
+            <label style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--light);cursor:pointer"><input type="checkbox" style="accent-color:var(--primary)"> التقارير المالية</label>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('addAdminModal')">إلغاء</button>
+      <button class="btn btn-primary" onclick="addAdmin()"><i class="fas fa-save"></i> إضافة المدير</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add Category Modal -->
+<div class="modal-overlay" id="addCatModal">
+  <div class="admin-modal">
+    <div class="modal-head">
+      <h3><i class="fas fa-tag"></i> إضافة فئة جديدة</h3>
+      <button class="modal-close" onclick="closeModal('addCatModal')">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="form-group"><label class="form-label">اسم الفئة (عربي)</label><input type="text" class="form-control" id="newCatNameAr" placeholder="مثال: الإلكترونيات" /></div>
+        <div class="form-group"><label class="form-label">اسم الفئة (English)</label><input type="text" class="form-control" id="newCatName" placeholder="e.g. Electronics" /></div>
+        <div class="form-group"><label class="form-label">أيقونة (Font Awesome)</label><input type="text" class="form-control" id="newCatIcon" placeholder="fa-microchip" /></div>
+        <div class="form-group"><label class="form-label">اللون</label><input type="color" class="form-control" id="newCatColor" value="#FF6B35" style="height:42px;padding:4px" /></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('addCatModal')">إلغاء</button>
+      <button class="btn btn-primary" onclick="addCategory()"><i class="fas fa-save"></i> إضافة الفئة</button>
+    </div>
+  </div>
+</div>
+
+<!-- Pending User Rejection Modal -->
+<div class="modal-overlay" id="rejectPendingModal">
+  <div class="admin-modal" style="max-width:500px">
+    <div class="modal-head">
+      <h3><i class="fas fa-user-times" style="color:var(--danger)"></i> رفض طلب التسجيل</h3>
+      <button class="modal-close" onclick="closeModal('rejectPendingModal')">×</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="rejectPendingId" />
+      <p id="rejectPendingName" style="font-size:14px;color:var(--light);margin-bottom:16px"></p>
+      <div class="form-group">
+        <label class="form-label">سبب الرفض <span style="color:var(--danger)">*</span></label>
+        <select class="form-control" id="rejectReasonSelect" onchange="updateRejectCustom()">
+          <option value="">— اختر السبب —</option>
+          <option value="بيانات غير مكتملة أو غير صحيحة">بيانات غير مكتملة أو غير صحيحة</option>
+          <option value="بريد إلكتروني مشبوه">بريد إلكتروني مشبوه</option>
+          <option value="معلومات الشركة غير موثوقة">معلومات الشركة غير موثوقة</option>
+          <option value="مخالفة شروط الاستخدام">مخالفة شروط الاستخدام</option>
+          <option value="حساب مكرر">حساب مكرر</option>
+          <option value="custom">سبب آخر (أكتب يدوياً)</option>
+        </select>
+      </div>
+      <div class="form-group" id="customReasonGroup" style="display:none">
+        <label class="form-label">سبب مخصص</label>
+        <textarea class="form-control" id="rejectCustomReason" rows="3" placeholder="أكتب سبب الرفض..."></textarea>
+      </div>
+      <div style="background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.2);border-radius:10px;padding:12px;font-size:12px;color:var(--danger)">
+        <i class="fas fa-exclamation-triangle"></i>
+        سيُبلَّغ المستخدم بأن طلبه مرفوض. يمكنه التسجيل مرة أخرى بمعلومات صحيحة.
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('rejectPendingModal')">إلغاء</button>
+      <button class="btn" style="background:var(--danger)" onclick="submitRejectPending()">
+        <i class="fas fa-times-circle"></i> تأكيد الرفض
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Pending User Approval Confirm Modal -->
+<div class="modal-overlay" id="approvePendingModal">
+  <div class="admin-modal" style="max-width:480px">
+    <div class="modal-head">
+      <h3><i class="fas fa-user-check" style="color:var(--success)"></i> تأكيد تفعيل الحساب</h3>
+      <button class="modal-close" onclick="closeModal('approvePendingModal')">×</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="approvePendingId" />
+      <div id="approvePendingDetails" style="background:var(--card2);border-radius:12px;padding:16px;margin-bottom:16px"></div>
+      <div style="background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.2);border-radius:10px;padding:12px;font-size:13px;color:var(--success)">
+        <i class="fas fa-check-circle"></i>
+        سيتم إنشاء حساب نشط للمستخدم فور الموافقة، ويمكنه تسجيل الدخول فوراً.
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('approvePendingModal')">إلغاء</button>
+      <button class="btn" style="background:var(--success)" onclick="submitApprovePending()">
+        <i class="fas fa-check-circle"></i> موافقة وتفعيل الحساب
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Ticket Detail Modal -->
+<div class="modal-overlay" id="ticketDetailModal">
+  <div class="admin-modal" style="max-width:600px">
+    <div class="modal-head">
+      <h3><i class="fas fa-headset"></i> <span id="ticketDetailNumber">تذكرة الدعم</span></h3>
+      <button class="modal-close" onclick="closeModal('ticketDetailModal')">×</button>
+    </div>
+    <div class="modal-body" id="ticketDetailBody">
+      <!-- Dynamic content -->
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('ticketDetailModal')">إغلاق</button>
+      <button class="btn btn-success" id="ticketResolveBtn"><i class="fas fa-check"></i> تحديد كمحلول</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add Ticket Modal -->
+<div class="modal-overlay" id="addTicketModal">
+  <div class="admin-modal" style="max-width:560px">
+    <div class="modal-head">
+      <h3><i class="fas fa-plus"></i> إنشاء تذكرة دعم</h3>
+      <button class="modal-close" onclick="closeModal('addTicketModal')">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="form-group"><label class="form-label">اسم المستخدم</label><input type="text" class="form-control" id="newTkUser" placeholder="اسم المستخدم" /></div>
+        <div class="form-group"><label class="form-label">البريد الإلكتروني</label><input type="email" class="form-control" id="newTkEmail" placeholder="email@example.com" /></div>
+        <div class="form-group"><label class="form-label">فئة التذكرة</label>
+          <select class="form-control" id="newTkCategory">
+            <option value="payment">المدفوعات</option><option value="product">المنتجات</option>
+            <option value="account">الحساب</option><option value="shipping">الشحن</option><option value="other">أخرى</option>
+          </select>
+        </div>
+        <div class="form-group"><label class="form-label">الأولوية</label>
+          <select class="form-control" id="newTkPriority">
+            <option value="low">منخفضة</option><option value="medium" selected>متوسطة</option>
+            <option value="high">عالية</option><option value="critical">حرجة</option>
+          </select>
+        </div>
+        <div class="form-group form-full"><label class="form-label">موضوع التذكرة</label><input type="text" class="form-control" id="newTkSubject" placeholder="موضوع المشكلة" /></div>
+        <div class="form-group form-full"><label class="form-label">تفاصيل المشكلة</label><textarea class="form-control" id="newTkMessage" rows="4" placeholder="اشرح المشكلة بالتفصيل..."></textarea></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('addTicketModal')">إلغاء</button>
+      <button class="btn btn-primary" onclick="addTicket()"><i class="fas fa-save"></i> إنشاء التذكرة</button>
+    </div>
+  </div>
+</div>
+
+<!-- User Detail Modal -->
+<div class="modal-overlay" id="userDetailModal">
+  <div class="admin-modal" style="max-width:580px">
+    <div class="modal-head">
+      <h3><i class="fas fa-user"></i> تفاصيل المستخدم</h3>
+      <button class="modal-close" onclick="closeModal('userDetailModal')">×</button>
+    </div>
+    <div class="modal-body" id="userDetailBody"></div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('userDetailModal')">إغلاق</button>
+      <button class="btn btn-primary" id="userDetailEditBtn"><i class="fas fa-edit"></i> تعديل البيانات</button>
+    </div>
+  </div>
+</div>
+
+<!-- Confirm Modal -->
+<div class="modal-overlay" id="confirmModal">
+  <div class="admin-modal" style="max-width:420px">
+    <div class="modal-head"><h3><i class="fas fa-exclamation-triangle" style="color:var(--danger)"></i> <span id="confirmTitle">تأكيد الإجراء</span></h3><button class="modal-close" onclick="closeModal('confirmModal')">×</button></div>
+    <div class="modal-body"><p id="confirmText" style="color:var(--light);font-size:14px;line-height:1.7"></p></div>
+    <div class="modal-footer"><button class="btn btn-ghost" onclick="closeModal('confirmModal')">إلغاء</button><button class="btn btn-danger" id="confirmBtn">تأكيد</button></div>
+  </div>
+</div>
+
+<!-- Toast Stack -->
+<div class="toast-stack" id="toastStack"></div>
+
+<script>
+/* ===========================================
+   TradeHub Pro — Admin Panel JS
+=========================================== */
+
+// ===== DATA CACHE =====
+let dataCache = { users: [], products: [], orders: [], reports: [], categories: [], settings: [] };
+let currentUser = null;
+
+// Load admin info
+try { currentUser = JSON.parse(localStorage.getItem('tradehub_admin')); } catch(e){}
+
+// ===== TOAST =====
+function toast(msg, type='info', dur=3500) {
+  const stack = document.getElementById('toastStack');
+  const icons = { success:'fa-check-circle', error:'fa-times-circle', warning:'fa-exclamation-triangle', info:'fa-info-circle' };
+  const t = document.createElement('div');
+  t.className = `adm-toast ${type}`;
+  t.innerHTML = `<i class="fas ${icons[type]||icons.info}"></i><span>${msg}</span>`;
+  stack.appendChild(t);
+  setTimeout(() => { t.style.opacity='0'; t.style.transform='translateX(-20px)'; t.style.transition='all 0.3s'; setTimeout(()=>t.remove(),300); }, dur);
+}
+
+// ===== PAGE NAVIGATION =====
+const pageTitles = {
+  overview:'لوحة المعلومات / نظرة عامة', activity:'سجل النشاط الكامل',
+  users:'إدارة المستخدمين', sellers:'إدارة الموردين', buyers:'إدارة المشترين',
+  products:'إدارة المنتجات', categories:'إدارة الفئات', reports:'البلاغات والمخالفات',
+  orders:'الطلبات والمعاملات', finance:'التقارير المالية', commissions:'إدارة العمولات',
+  settings:'إعدادات المنصة', admins:'مدراء النظام', logs:'سجلات النظام',
+  tickets:'الدعم الفني', reviews:'التقييمات والمراجعات',
+  pending:'طلبات التسجيل — موافقة المدير العام'
+};
+
+function showPage(id) {
+  document.querySelectorAll('.admin-page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
+  document.getElementById(`page-${id}`)?.classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(b => { if(b.getAttribute('onclick')?.includes(`'${id}'`)) b.classList.add('active'); });
+  document.getElementById('topbarTitle').innerHTML = `لوحة المدير العام <span>/ ${pageTitles[id]||id}</span>`;
+  // Lazy-load pages
+  const loaders = { users: loadUsers, sellers: loadSellers, buyers: loadBuyers, products: loadAdminProducts, categories: loadCategories, orders: loadOrders, reports: loadReports, finance: initFinanceChart, activity: loadFullActivity, commissions: loadCommissions, tickets: loadTickets, reviews: loadReviewsPage, pending: loadPendingUsers, settings: loadLogoSettings };
+  if(loaders[id]) loaders[id]();
+}
+
+// ===== CLOCK =====
+function updateClock() {
+  const now = new Date();
+  document.getElementById('adminClock').textContent = now.toLocaleTimeString('ar-SA', {hour:'2-digit',minute:'2-digit'});
+}
+setInterval(updateClock, 1000); updateClock();
+
+// ===== MODAL =====
+function openModal(id) { document.getElementById(id)?.classList.add('open'); }
+function closeModal(id) { document.getElementById(id)?.classList.remove('open'); }
+document.querySelectorAll('.modal-overlay').forEach(m => m.addEventListener('click', e => { if(e.target===m) m.classList.remove('open'); }));
+
+// ===== LOGOUT =====
+function adminLogout() {
+  if(!confirm('هل تريد تسجيل الخروج؟')) return;
+  localStorage.removeItem('tradehub_admin');
+  window.location.href = 'admin-login.html';
+}
+
+// ===== OVERVIEW CHARTS =====
+let revenueChart, geoChart, orderStatusChart, catChart;
+
+function initCharts() {
+  Chart.defaults.color = '#64748b';
+  Chart.defaults.font.family = 'Cairo';
+
+  // Revenue chart
+  const revCtx = document.getElementById('mainRevenueChart')?.getContext('2d');
+  if(revCtx) {
+    revenueChart = new Chart(revCtx, {
+      type: 'line',
+      data: {
+        labels: ['يناير','فبراير','مارس','أبريل','مايو'],
+        datasets: [
+          { label:'الإيرادات ($K)', data:[128,142,156,168,245], borderColor:'#FF6B35', backgroundColor:'rgba(255,107,53,0.07)', tension:0.4, fill:true, borderWidth:2.5, pointBackgroundColor:'#FF6B35', pointRadius:4 },
+          { label:'الطلبات', data:[2840,3120,3450,3890,5240], borderColor:'#3b82f6', backgroundColor:'rgba(59,130,246,0.05)', tension:0.4, fill:true, borderWidth:2, pointBackgroundColor:'#3b82f6', pointRadius:4, yAxisID:'y2' }
+        ]
+      },
+      options: { responsive:true, maintainAspectRatio:false, interaction:{mode:'index',intersect:false},
+        scales: { y:{beginAtZero:false,grid:{color:'rgba(255,255,255,0.04)'}}, y2:{beginAtZero:false,position:'left',grid:{display:false},display:false} },
+        plugins:{ legend:{position:'top',labels:{boxWidth:10,padding:16}} }
+      }
+    });
+  }
+
+  // Geo chart
+  const geoCtx = document.getElementById('usersGeoChart')?.getContext('2d');
+  if(geoCtx) {
+    new Chart(geoCtx, {
+      type: 'doughnut',
+      data: {
+        labels: ['السعودية','الصين','الإمارات','مصر','ألمانيا','أخرى'],
+        datasets: [{ data:[28,22,14,11,8,17], backgroundColor:['#FF6B35','#f59e0b','#3b82f6','#10b981','#8b5cf6','#64748b'], borderWidth:0, hoverOffset:6 }]
+      },
+      options: { responsive:true, maintainAspectRatio:false, plugins:{ legend:{position:'bottom',labels:{font:{size:11},padding:8,boxWidth:10}} }, cutout:'68%' }
+    });
+  }
+
+  // Orders status
+  const ordCtx = document.getElementById('ordersStatusChart')?.getContext('2d');
+  if(ordCtx) {
+    new Chart(ordCtx, {
+      type: 'bar',
+      data: {
+        labels: ['يناير','فبراير','مارس','أبريل','مايو'],
+        datasets: [
+          { label:'مكتملة', data:[2200,2600,2900,3300,4700], backgroundColor:'rgba(16,185,129,0.75)', borderRadius:4 },
+          { label:'ملغاة', data:[320,280,320,360,280], backgroundColor:'rgba(239,68,68,0.7)', borderRadius:4 },
+          { label:'مسترجعة', data:[120,140,130,150,110], backgroundColor:'rgba(245,158,11,0.7)', borderRadius:4 }
+        ]
+      },
+      options: { responsive:true, maintainAspectRatio:false, scales:{ x:{stacked:true,grid:{display:false}}, y:{stacked:true,grid:{color:'rgba(255,255,255,0.04)'}} }, plugins:{legend:{position:'top',labels:{boxWidth:10,font:{size:11}}}} }
+    });
+  }
+
+  // Category sales
+  const catCtx = document.getElementById('categorySalesChart')?.getContext('2d');
+  if(catCtx) {
+    new Chart(catCtx, {
+      type: 'bar',
+      data: {
+        labels: ['إلكترونيات','ملابس','آلات','منزل','جمال','سيارات','رياضة','أغذية'],
+        datasets: [{ label:'المبيعات ($K)', data:[245,180,320,95,112,88,76,64], backgroundColor:['#FF6B35','#4ECDC4','#45B7D1','#96CEB4','#FF9FF3','#54A0FF','#5F27CD','#FF9F43'], borderRadius:6, borderWidth:0 }]
+      },
+      options: { indexAxis:'y', responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{ x:{grid:{color:'rgba(255,255,255,0.04)'}}, y:{grid:{display:false}} } }
+    });
+  }
+}
+
+function switchRevenueChart(period, btn) {
+  document.querySelectorAll('.chart-tab').forEach(t=>t.classList.remove('active'));
+  btn.classList.add('active');
+  if(!revenueChart) return;
+  const monthly = { labels:['يناير','فبراير','مارس','أبريل','مايو'], rev:[128,142,156,168,245], ord:[2840,3120,3450,3890,5240] };
+  const weekly = { labels:['أسبوع 1','أسبوع 2','أسبوع 3','أسبوع 4','أسبوع 5'], rev:[38,45,62,72,58], ord:[820,960,1240,1580,640] };
+  const d = period==='monthly' ? monthly : weekly;
+  revenueChart.data.labels = d.labels;
+  revenueChart.data.datasets[0].data = d.rev;
+  revenueChart.data.datasets[1].data = d.ord;
+  revenueChart.update();
+}
+
+// Activity Feed
+function renderActivityFeed(containerId, limit=6) {
+  const activities = [
+    { icon:'fa-shopping-bag', bg:'rgba(255,107,53,0.12)', color:'var(--primary)', title:'طلب جديد <strong>#TH-2026-0541</strong> من Ahmed Khalil', time:'منذ 10 دقائق', amount:'+$2,750' },
+    { icon:'fa-user-plus', bg:'rgba(16,185,129,0.12)', color:'var(--success)', title:'مستخدم جديد سجّل: <strong>Liu Trading Co.</strong>', time:'منذ 25 دقيقة', amount:null },
+    { icon:'fa-flag', bg:'rgba(239,68,68,0.12)', color:'var(--danger)', title:'بلاغ جديد بأولوية <strong>حرجة</strong> من محمد', time:'منذ 40 دقيقة', amount:null },
+    { icon:'fa-check-circle', bg:'rgba(16,185,129,0.12)', color:'var(--success)', title:'طلب <strong>#TH-2026-0539</strong> تم تسليمه', time:'منذ ساعة', amount:'+$1,200' },
+    { icon:'fa-undo', bg:'rgba(245,158,11,0.12)', color:'var(--warning)', title:'استرداد مبلغ لطلب <strong>#TH-2026-0534</strong>', time:'منذ ساعتين', amount:'-$1,500' },
+    { icon:'fa-store', bg:'rgba(139,92,246,0.12)', color:'var(--purple)', title:'مورد جديد <strong>BeautyPlus Korea</strong> طلب الانضمام', time:'منذ 3 ساعات', amount:null },
+    { icon:'fa-dollar-sign', bg:'rgba(255,107,53,0.12)', color:'var(--primary)', title:'تم دفع عمولة $7,810 لشهر مارس', time:'منذ 5 ساعات', amount:'+$7,810' },
+    { icon:'fa-exclamation-triangle', bg:'rgba(245,158,11,0.12)', color:'var(--warning)', title:'تحذير: محاولة دخول فاشلة متعددة', time:'منذ 6 ساعات', amount:null },
+  ];
+  const el = document.getElementById(containerId);
+  if(!el) return;
+  el.innerHTML = activities.slice(0,limit).map(a=>`
+    <div class="activity-item">
+      <div class="activity-dot" style="background:${a.bg}"><i class="fas ${a.icon}" style="color:${a.color}"></i></div>
+      <div class="activity-body">
+        <div class="activity-title">${a.title}</div>
+        <div class="activity-time">${a.time}</div>
+      </div>
+      ${a.amount?`<div class="activity-amount" style="color:${a.amount.startsWith('-')?'var(--danger)':'var(--success)'}">${a.amount}</div>`:''}
+    </div>`).join('');
+}
+
+function renderAlerts() {
+  const el = document.getElementById('systemAlerts');
+  if(!el) return;
+  const alerts = [
+    { type:'danger', icon:'fa-flag', msg:'3 بلاغات مفتوحة تنتظر مراجعتك', action:"showPage('reports')", btn:'مراجعة' },
+    { type:'warning', icon:'fa-store', msg:'2 مورد ينتظران الموافقة', action:"showPage('sellers')", btn:'مراجعة' },
+    { type:'info', icon:'fa-server', msg:'النسخ الاحتياطي اليومي اكتمل بنجاح', action:null, btn:null },
+    { type:'success', icon:'fa-chart-line', msg:'نمو الإيرادات 45% هذا الشهر!', action:null, btn:null },
+  ];
+  el.innerHTML = alerts.map(a=>`
+    <div style="display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid rgba(255,255,255,0.04)">
+      <div style="width:36px;height:36px;border-radius:50%;background:rgba(${a.type==='danger'?'239,68,68':a.type==='warning'?'245,158,11':a.type==='info'?'59,130,246':'16,185,129'},0.12);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+        <i class="fas ${a.icon}" style="color:var(--${a.type==='danger'?'danger':a.type==='warning'?'warning':a.type==='info'?'info':'success'})"></i>
+      </div>
+      <span style="flex:1;font-size:12px;color:var(--light)">${a.msg}</span>
+      ${a.btn?`<button class="btn btn-ghost btn-sm" onclick="${a.action}" style="font-size:11px;padding:4px 10px">${a.btn}</button>`:''}
+    </div>`).join('');
+}
+
+// ===== LOAD USERS =====
+let allUsersData = [], filteredUsersData = [];
+async function loadUsers() {
+  if(dataCache.users.length) { renderUsers(dataCache.users); return; }
+  try {
+    const r = await fetch('tables/admin_users?limit=100');
+    const d = await r.json();
+    dataCache.users = d.data||[];
+    allUsersData = dataCache.users;
+    renderUsers(allUsersData);
+  } catch { toast('تعذر تحميل المستخدمين','error'); }
+}
+
+function renderUsers(users) {
+  const tbody = document.getElementById('usersTableBody');
+  document.getElementById('usersPagInfo').textContent = `${users.length} مستخدم`;
+  if(!users.length){ tbody.innerHTML='<tr><td colspan="10" style="text-align:center;padding:30px;color:var(--muted)">لا توجد نتائج</td></tr>'; return; }
+  const colors = ['#FF6B35','#4ECDC4','#3b82f6','#8b5cf6','#10b981','#f59e0b'];
+  tbody.innerHTML = users.map((u,i)=>`
+    <tr>
+      <td><input type="checkbox" class="userRow" style="accent-color:var(--primary)"></td>
+      <td><div class="user-cell"><div class="user-av" style="background:${colors[i%colors.length]}">${(u.name||'؟')[0]}</div><div><div style="font-weight:600;font-size:13px">${u.name}</div><div style="font-size:11px;color:var(--muted)">${u.phone||''}</div></div></div></td>
+      <td style="color:var(--muted);font-size:12px">${u.email}</td>
+      <td><span class="badge badge-${u.role}">${u.role==='buyer'?'مشتري':u.role==='seller'?'بائع':'مدير'}</span></td>
+      <td style="font-size:12px"><i class="fas fa-map-marker-alt" style="color:var(--primary);margin-left:4px"></i>${u.country}</td>
+      <td><span class="badge badge-${u.status}">${{active:'نشط',pending:'معلق',suspended:'موقوف',banned:'محظور'}[u.status]||u.status}</span></td>
+      <td style="text-align:center;font-weight:700">${u.total_orders||0}</td>
+      <td style="color:var(--success);font-weight:700">${u.total_spent>0?'$'+u.total_spent.toLocaleString():'—'}</td>
+      <td style="font-size:12px;color:var(--muted)">${u.join_date||'—'}</td>
+      <td><div class="action-btns">
+        <button class="act-btn view" title="عرض" onclick="viewUser('${u.id}')"><i class="fas fa-eye"></i></button>
+        <button class="act-btn edit" title="تعديل"><i class="fas fa-edit"></i></button>
+        ${u.status==='active'?`<button class="act-btn suspend" title="توقيف" onclick="updateUserStatus('${u.id}','suspended')"><i class="fas fa-ban"></i></button>`:`<button class="act-btn approve" title="تفعيل" onclick="updateUserStatus('${u.id}','active')"><i class="fas fa-check"></i></button>`}
+        <button class="act-btn delete" title="حذف" onclick="confirmDelete('مستخدم','${u.id}')"><i class="fas fa-trash"></i></button>
+      </div></td>
+    </tr>`).join('');
+}
+
+function filterUsers() {
+  const q = document.getElementById('usersSearch').value.toLowerCase();
+  const role = document.getElementById('usersRoleFilter').value;
+  const status = document.getElementById('usersStatusFilter').value;
+  const filtered = allUsersData.filter(u=>
+    (!q || (u.name||'').toLowerCase().includes(q) || (u.email||'').toLowerCase().includes(q)) &&
+    (!role || u.role===role) && (!status || u.status===status)
+  );
+  renderUsers(filtered);
+}
+
+async function updateUserStatus(id, status) {
+  await fetch(`tables/admin_users/${id}`, { method:'PATCH', headers:{'Content-Type':'application/json'}, body:JSON.stringify({status}) });
+  toast(`تم تغيير حالة المستخدم إلى: ${status==='active'?'نشط':'موقوف'}`, status==='active'?'success':'warning');
+  dataCache.users = [];
+  loadUsers();
+}
+
+function viewUser(id) {
+  const u = allUsersData.find(u=>u.id===id);
+  if(!u) return;
+  toast(`عرض ملف: ${u.name}`, 'info');
+}
+
+async function addUser() {
+  const name = document.getElementById('newUserName').value.trim();
+  const email = document.getElementById('newUserEmail').value.trim();
+  if(!name || !email){ toast('يرجى ملء جميع الحقول','error'); return; }
+  await fetch('tables/admin_users', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({name, email, role:document.getElementById('newUserRole').value, country:document.getElementById('newUserCountry').value, status:'active', total_orders:0, total_spent:0, verified:false, join_date:new Date().toISOString().split('T')[0]}) });
+  toast('تم إضافة المستخدم بنجاح ✅','success');
+  closeModal('addUserModal');
+  dataCache.users = []; loadUsers();
+}
+
+// ===== LOAD SELLERS =====
+async function loadSellers() {
+  if(!dataCache.users.length) await loadUsers();
+  const sellers = dataCache.users.filter(u=>u.role==='seller');
+  renderSellers(sellers);
+}
+function renderSellers(sellers) {
+  document.getElementById('sellersTableBody').innerHTML = sellers.map(s=>`
+    <tr>
+      <td><div class="user-cell"><div class="user-av" style="background:rgba(139,92,246,0.8)">${(s.name||'؟')[0]}</div><strong>${s.name}</strong></div></td>
+      <td style="color:var(--muted);font-size:12px">${s.email}</td>
+      <td>${s.country}</td>
+      <td style="text-align:center">${Math.floor(Math.random()*300+20)}</td>
+      <td style="text-align:center;font-weight:700;color:var(--primary)">${s.total_orders}</td>
+      <td><span class="badge badge-${s.status}">${{active:'نشط',pending:'معلق',suspended:'موقوف'}[s.status]||s.status}</span></td>
+      <td>${s.verified?'<span class="badge badge-verified"><i class="fas fa-check-circle"></i> معتمد</span>':'<span class="badge badge-pending">غير معتمد</span>'}</td>
+      <td><div class="action-btns">
+        ${!s.verified?`<button class="act-btn approve" title="اعتماد" onclick="approveSeller('${s.id}')"><i class="fas fa-check"></i></button>`:''}
+        ${s.status==='pending'?`<button class="btn btn-success btn-sm" onclick="approveSeller('${s.id}')"><i class="fas fa-check"></i> قبول</button>`:''}
+        <button class="act-btn suspend" title="توقيف" onclick="updateUserStatus('${s.id}','suspended')"><i class="fas fa-ban"></i></button>
+        <button class="act-btn delete" onclick="confirmDelete('مورد','${s.id}')"><i class="fas fa-trash"></i></button>
+      </div></td>
+    </tr>`).join('');
+}
+function filterSellers() {
+  if(!dataCache.users.length) return;
+  const q = document.getElementById('sellersSearch').value.toLowerCase();
+  const st = document.getElementById('sellersStatusFilter').value;
+  renderSellers(dataCache.users.filter(u=>u.role==='seller' && (!q||(u.name||'').toLowerCase().includes(q)) && (!st||u.status===st)));
+}
+async function approveSeller(id) {
+  await fetch(`tables/admin_users/${id}`,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({status:'active',verified:true})});
+  toast('تم اعتماد المورد بنجاح ✅','success'); dataCache.users=[]; loadSellers();
+}
+function showPendingSellers() { document.getElementById('sellersStatusFilter').value='pending'; filterSellers(); }
+
+// ===== LOAD BUYERS =====
+async function loadBuyers() {
+  if(!dataCache.users.length) await loadUsers();
+  const buyers = dataCache.users.filter(u=>u.role==='buyer');
+  renderBuyers(buyers);
+}
+function renderBuyers(buyers) {
+  document.getElementById('buyersTableBody').innerHTML = buyers.map(b=>`
+    <tr>
+      <td><div class="user-cell"><div class="user-av" style="background:rgba(59,130,246,0.8)">${(b.name||'؟')[0]}</div><strong>${b.name}</strong></div></td>
+      <td style="color:var(--muted);font-size:12px">${b.email}</td>
+      <td>${b.country}</td>
+      <td style="text-align:center;font-weight:700">${b.total_orders||0}</td>
+      <td style="color:var(--success);font-weight:700">${b.total_spent>0?'$'+b.total_spent.toLocaleString():'$0'}</td>
+      <td><span class="badge badge-${b.status}">${{active:'نشط',pending:'معلق',suspended:'موقوف',banned:'محظور'}[b.status]||b.status}</span></td>
+      <td style="font-size:12px;color:var(--muted)">${b.join_date||'—'}</td>
+      <td><div class="action-btns">
+        <button class="act-btn view"><i class="fas fa-eye"></i></button>
+        <button class="act-btn edit"><i class="fas fa-edit"></i></button>
+        ${b.status!=='banned'?`<button class="act-btn delete" title="حظر" onclick="confirmDelete('مشتري','${b.id}')"><i class="fas fa-ban"></i></button>`:''}
+      </div></td>
+    </tr>`).join('');
+}
+function filterBuyers() {
+  if(!dataCache.users.length) return;
+  const q = document.getElementById('buyersSearch').value.toLowerCase();
+  renderBuyers(dataCache.users.filter(u=>u.role==='buyer' && (!q||(u.name||'').toLowerCase().includes(q))));
+}
+
+// ===== LOAD PRODUCTS =====
+let allProdsData = [];
+async function loadAdminProducts() {
+  if(dataCache.products.length){ renderAdminProducts(dataCache.products); return; }
+  try {
+    const r = await fetch('tables/products?limit=100');
+    const d = await r.json();
+    dataCache.products = d.data||[];
+    allProdsData = dataCache.products;
+    document.getElementById('productsCount').textContent = allProdsData.length;
+    renderAdminProducts(allProdsData);
+  } catch { toast('تعذر تحميل المنتجات','error'); }
+}
+function renderAdminProducts(prods) {
+  const tbody = document.getElementById('adminProductsBody');
+  document.getElementById('prodsPagInfo').textContent = `${prods.length} منتج`;
+  if(!prods.length){ tbody.innerHTML='<tr><td colspan="9" style="text-align:center;padding:30px;color:var(--muted)">لا توجد منتجات</td></tr>'; return; }
+  tbody.innerHTML = prods.map(p=>`
+    <tr>
+      <td><input type="checkbox" class="prodRow" style="accent-color:var(--primary)"></td>
+      <td><div class="user-cell"><img src="${p.image_url||'https://placehold.co/36x36/1a2235/fff?text=P'}" style="width:36px;height:36px;border-radius:8px;object-fit:cover;border:1px solid var(--border)"><span style="font-weight:600;font-size:13px;max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:block">${p.name_ar||p.name}</span></div></td>
+      <td style="font-size:12px;color:var(--muted)">${p.subcategory||'—'}</td>
+      <td style="font-size:12px;color:var(--muted)">${p.supplier||'—'}</td>
+      <td style="color:var(--primary);font-weight:700">$${p.price_min}–$${p.price_max}</td>
+      <td style="text-align:center">${p.min_order} ${p.unit||''}</td>
+      <td><span style="color:var(--warning)">★ ${p.rating||4.5}</span> <span style="color:var(--muted);font-size:11px">(${p.reviews_count||0})</span></td>
+      <td>${p.in_stock?'<span class="badge badge-active">متوفر</span>':'<span class="badge badge-suspended">نفذ</span>'}</td>
+      <td><div class="action-btns">
+        <button class="act-btn view" onclick="window.open('product.html?id=${p.id}','_blank')"><i class="fas fa-eye"></i></button>
+        <button class="act-btn delete" onclick="adminDeleteProduct('${p.id}')"><i class="fas fa-trash"></i></button>
+      </div></td>
+    </tr>`).join('');
+}
+function filterAdminProducts() {
+  const q = document.getElementById('adminProductsSearch').value.toLowerCase();
+  const cat = document.getElementById('adminProductsCatFilter').value;
+  renderAdminProducts(allProdsData.filter(p=>(!q||(p.name_ar||p.name||'').toLowerCase().includes(q)||( p.supplier||'').toLowerCase().includes(q))&&(!cat||p.category===cat)));
+}
+async function adminDeleteProduct(id) {
+  if(!confirm('هل تريد حذف هذا المنتج نهائياً؟')) return;
+  await fetch(`tables/products/${id}`,{method:'DELETE'});
+  toast('تم حذف المنتج','warning'); dataCache.products=[]; loadAdminProducts();
+}
+function bulkDeleteProducts() {
+  const checked = document.querySelectorAll('.prodRow:checked');
+  if(!checked.length){ toast('لم تحدد أي منتجات','warning'); return; }
+  if(!confirm(`حذف ${checked.length} منتج؟`)) return;
+  toast(`تم حذف ${checked.length} منتج`,'warning');
+}
+
+// ===== LOAD CATEGORIES =====
+async function loadCategories() {
+  try {
+    const r = await fetch('tables/categories?limit=20');
+    const d = await r.json();
+    const cats = d.data||[];
+    document.getElementById('categoriesGrid').innerHTML = cats.map(c=>`
+      <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:22px;text-align:center;transition:var(--transition)" onmouseover="this.style.borderColor='var(--primary)'" onmouseout="this.style.borderColor='var(--border)'">
+        <div style="width:56px;height:56px;border-radius:14px;background:${c.color||'#FF6B35'}22;display:flex;align-items:center;justify-content:center;margin:0 auto 12px;font-size:24px;color:${c.color||'#FF6B35'}"><i class="fas ${c.icon||'fa-box'}"></i></div>
+        <div style="font-size:14px;font-weight:700;color:white;margin-bottom:4px">${c.name_ar||c.name}</div>
+        <div style="font-size:12px;color:var(--muted);margin-bottom:14px">${(c.products_count||0).toLocaleString()} منتج</div>
+        <div style="display:flex;gap:6px;justify-content:center">
+          <button class="act-btn edit" title="تعديل" onclick="toast('تعديل الفئة قيد التطوير','info')"><i class="fas fa-edit"></i></button>
+          <button class="act-btn delete" title="حذف" onclick="confirmDelete('فئة','${c.id}')"><i class="fas fa-trash"></i></button>
+        </div>
+      </div>`).join('') + `
+      <div style="background:var(--card2);border:2px dashed var(--border);border-radius:var(--radius-lg);padding:22px;text-align:center;cursor:pointer;transition:var(--transition)" onclick="openModal('addCatModal')" onmouseover="this.style.borderColor='var(--primary)'" onmouseout="this.style.borderColor='var(--border)'">
+        <div style="font-size:36px;color:var(--muted);margin-bottom:8px">+</div>
+        <div style="font-size:13px;font-weight:600;color:var(--muted)">إضافة فئة جديدة</div>
+      </div>`;
+  } catch { toast('تعذر تحميل الفئات','error'); }
+}
+async function addCategory() {
+  const nameAr = document.getElementById('newCatNameAr').value.trim();
+  const name = document.getElementById('newCatName').value.trim();
+  if(!nameAr||!name){ toast('يرجى ملء الحقول المطلوبة','error'); return; }
+  await fetch('tables/categories',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name,name_ar:nameAr,icon:document.getElementById('newCatIcon').value||'fa-box',color:document.getElementById('newCatColor').value,products_count:0})});
+  toast('تم إضافة الفئة بنجاح ✅','success');
+  closeModal('addCatModal'); loadCategories();
+}
+
+// ===== LOAD ORDERS =====
+async function loadOrders() {
+  if(dataCache.orders.length){ renderOrders(dataCache.orders); return; }
+  try {
+    const r = await fetch('tables/admin_orders?limit=100');
+    const d = await r.json();
+    dataCache.orders = d.data||[];
+    renderOrders(dataCache.orders);
+    updateOrderStats(dataCache.orders);
+  } catch { toast('تعذر تحميل الطلبات','error'); }
+}
+function renderOrders(orders) {
+  document.getElementById('ordersTableBody').innerHTML = orders.map(o=>`
+    <tr>
+      <td style="font-weight:700;color:var(--primary);font-size:12px">${o.order_number}</td>
+      <td><div class="user-cell"><div class="user-av" style="background:rgba(59,130,246,0.7);width:28px;height:28px;font-size:11px">${(o.buyer_name||'؟')[0]}</div>${o.buyer_name}</div></td>
+      <td style="font-size:12px;color:var(--muted)">${o.seller_name}</td>
+      <td style="font-size:12px;max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${o.product_name}</td>
+      <td style="text-align:center">${(o.quantity||0).toLocaleString()}</td>
+      <td style="font-weight:700;color:var(--success)">$${(o.amount||0).toLocaleString()}</td>
+      <td style="color:var(--primary)">$${(o.commission||0).toFixed(1)}</td>
+      <td style="font-size:12px;color:var(--muted)">${o.payment_method}</td>
+      <td><span class="badge badge-${o.status}">${{pending:'معلق',processing:'جاري',shipped:'مشحون',delivered:'مسلّم',cancelled:'ملغي',refunded:'مسترد'}[o.status]||o.status}</span></td>
+      <td style="font-size:12px;color:var(--muted)">${o.created_date}</td>
+      <td><div class="action-btns">
+        <button class="act-btn view"><i class="fas fa-eye"></i></button>
+        <button class="act-btn edit"><i class="fas fa-edit"></i></button>
+      </div></td>
+    </tr>`).join('');
+}
+function updateOrderStats(orders) {
+  document.getElementById('o-total').textContent = orders.length;
+  document.getElementById('o-pending').textContent = orders.filter(o=>o.status==='pending').length;
+  document.getElementById('o-process').textContent = orders.filter(o=>o.status==='processing').length;
+  document.getElementById('o-done').textContent = orders.filter(o=>['shipped','delivered'].includes(o.status)).length;
+  document.getElementById('o-cancel').textContent = orders.filter(o=>['cancelled','refunded'].includes(o.status)).length;
+}
+function filterOrders() {
+  if(!dataCache.orders.length) return;
+  const q = document.getElementById('ordersSearch').value.toLowerCase();
+  const st = document.getElementById('ordersStatusFilter').value;
+  renderOrders(dataCache.orders.filter(o=>(!q||(o.order_number||'').toLowerCase().includes(q)||(o.buyer_name||'').toLowerCase().includes(q))&&(!st||o.status===st)));
+}
+
+// ===== LOAD REPORTS =====
+async function loadReports() {
+  if(dataCache.reports.length){ renderReports(dataCache.reports); return; }
+  try {
+    const r = await fetch('tables/admin_reports?limit=100');
+    const d = await r.json();
+    dataCache.reports = d.data||[];
+    renderReports(dataCache.reports);
+    updateReportStats(dataCache.reports);
+  } catch { toast('تعذر تحميل البلاغات','error'); }
+}
+function renderReports(reports) {
+  document.getElementById('reportsTableBody').innerHTML = reports.map(r=>`
+    <tr>
+      <td><div class="user-cell"><div class="user-av" style="background:rgba(239,68,68,0.7);width:28px;height:28px;font-size:11px">${(r.reporter||'؟')[0]}</div>${r.reporter}</div></td>
+      <td style="font-size:12px;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--light)">${r.reported_item}</td>
+      <td><span class="badge badge-${r.type==='product'?'active':r.type==='seller'?'seller':r.type==='review'?'buyer':'pending'}">${{product:'منتج',seller:'بائع',review:'تقييم',spam:'سبام'}[r.type]||r.type}</span></td>
+      <td style="font-size:12px;color:var(--muted);max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${r.reason}</td>
+      <td><span class="badge badge-${r.priority}">${{critical:'حرجة',high:'عالية',medium:'متوسطة',low:'منخفضة'}[r.priority]||r.priority}</span></td>
+      <td><span class="badge badge-${r.status}">${{open:'مفتوح',reviewing:'مراجعة',resolved:'محلول',dismissed:'مرفوض'}[r.status]||r.status}</span></td>
+      <td style="font-size:12px;color:var(--muted)">${r.created_date}</td>
+      <td><div class="action-btns">
+        <button class="act-btn approve" title="حل" onclick="resolveReport('${r.id}')"><i class="fas fa-check"></i></button>
+        <button class="act-btn edit" title="مراجعة" onclick="reviewReport('${r.id}')"><i class="fas fa-search"></i></button>
+        <button class="act-btn delete" title="رفض" onclick="dismissReport('${r.id}')"><i class="fas fa-times"></i></button>
+      </div></td>
+    </tr>`).join('');
+}
+function updateReportStats(reports) {
+  document.getElementById('rep-open').textContent = reports.filter(r=>r.status==='open').length;
+  document.getElementById('rep-review').textContent = reports.filter(r=>r.status==='reviewing').length;
+  document.getElementById('rep-done').textContent = reports.filter(r=>r.status==='resolved').length;
+  document.getElementById('rep-dismiss').textContent = reports.filter(r=>r.status==='dismissed').length;
+}
+function filterReports() {
+  if(!dataCache.reports.length) return;
+  const st = document.getElementById('reportsStatusFilter').value;
+  const tp = document.getElementById('reportsTypeFilter').value;
+  renderReports(dataCache.reports.filter(r=>(!st||r.status===st)&&(!tp||r.type===tp)));
+}
+async function resolveReport(id) {
+  await fetch(`tables/admin_reports/${id}`,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({status:'resolved'})});
+  toast('تم إغلاق البلاغ كمحلول ✅','success'); dataCache.reports=[]; loadReports();
+}
+async function reviewReport(id) {
+  await fetch(`tables/admin_reports/${id}`,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({status:'reviewing'})});
+  toast('تم تعيين البلاغ قيد المراجعة','info'); dataCache.reports=[]; loadReports();
+}
+async function dismissReport(id) {
+  await fetch(`tables/admin_reports/${id}`,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({status:'dismissed'})});
+  toast('تم رفض البلاغ','warning'); dataCache.reports=[]; loadReports();
+}
+
+// ===== FINANCE CHART =====
+function initFinanceChart() {
+  const ctx = document.getElementById('financeChart');
+  if(!ctx || ctx.dataset.init) return; ctx.dataset.init='1';
+  new Chart(ctx, {
+    type:'bar',
+    data:{
+      labels:['يناير','فبراير','مارس','أبريل','مايو'],
+      datasets:[
+        {label:'المبيعات ($K)',data:[128,142,156,168,245],backgroundColor:'rgba(16,185,129,0.7)',borderRadius:6},
+        {label:'العمولات ($K)',data:[6.4,7.1,7.8,8.4,12.3],backgroundColor:'rgba(255,107,53,0.8)',borderRadius:6},
+        {label:'الاسترجاعات ($K)',data:[2.1,1.8,2.4,3.2,2.9],backgroundColor:'rgba(239,68,68,0.7)',borderRadius:6}
+      ]
+    },
+    options:{responsive:true,maintainAspectRatio:false,scales:{y:{grid:{color:'rgba(255,255,255,0.04)'}},x:{grid:{display:false}}},plugins:{legend:{position:'top',labels:{boxWidth:10}}}}
+  });
+}
+
+// ===== COMMISSIONS =====
+function loadCommissions() {
+  if(!dataCache.orders.length){ fetch('tables/admin_orders?limit=20').then(r=>r.json()).then(d=>{ dataCache.orders=d.data||[]; renderCommissions(dataCache.orders); }); return; }
+  renderCommissions(dataCache.orders);
+}
+function renderCommissions(orders) {
+  document.getElementById('commissionsBody').innerHTML = orders.map(o=>`
+    <tr>
+      <td style="font-size:12px;color:var(--primary)">${o.order_number}</td>
+      <td>${o.seller_name}</td>
+      <td style="color:var(--success);font-weight:700">$${(o.amount||0).toLocaleString()}</td>
+      <td style="color:var(--primary);font-weight:800">$${(o.commission||0).toFixed(2)}</td>
+      <td>${o.amount>0?((o.commission/o.amount)*100).toFixed(1)+'%':'—'}</td>
+      <td><span class="badge badge-${['delivered','shipped'].includes(o.status)?'active':'pending'}">${['delivered','shipped'].includes(o.status)?'محصّلة':'معلقة'}</span></td>
+      <td style="font-size:12px;color:var(--muted)">${o.created_date}</td>
+    </tr>`).join('');
+}
+function saveCommissions() { toast('تم حفظ إعدادات العمولات ✅','success'); }
+
+// ===== LOGO / PLATFORM IDENTITY =====
+
+let _logoBase64 = ''; // temp store for uploaded file
+
+/** Convert dropped / selected file to base64 and preview */
+function handleLogoFile(file) {
+  if (!file) return;
+  if (file.size > 2 * 1024 * 1024) {
+    showLogoStatus('حجم الصورة يتجاوز 2MB — اختر صورة أصغر', 'error'); return;
+  }
+  const reader = new FileReader();
+  reader.onload = e => {
+    _logoBase64 = e.target.result; // base64 data URL
+    document.getElementById('logoCurrentValue').value = _logoBase64;
+    document.getElementById('logoUrlInput').value = '';
+    _renderLogoPreview(_logoBase64);
+    // Reset drop zone
+    const dz = document.getElementById('logoDropZone');
+    dz.style.borderColor = 'var(--success)';
+    dz.style.background  = '#f0fdf4';
+    dz.innerHTML = `<i class="fas fa-check-circle" style="font-size:28px;color:var(--success);margin-bottom:8px;display:block"></i><span style="color:var(--success);font-size:13px;font-weight:700">تم تحميل: ${file.name}</span>`;
+  };
+  reader.readAsDataURL(file);
+}
+
+function handleLogoDrop(event) {
+  event.preventDefault();
+  const dz = document.getElementById('logoDropZone');
+  dz.style.borderColor = 'var(--border)';
+  dz.style.background  = 'var(--bg-light)';
+  const file = event.dataTransfer?.files?.[0];
+  if (file && file.type.startsWith('image/')) handleLogoFile(file);
+}
+
+/** Preview logo from URL input */
+function previewLogoFromUrl(url) {
+  if (!url || !url.startsWith('http')) return;
+  _logoBase64 = '';
+  document.getElementById('logoCurrentValue').value = url;
+  _renderLogoPreview(url);
+}
+
+/** Render preview in the preview box */
+function _renderLogoPreview(src) {
+  const box = document.getElementById('logoPreviewBox');
+  box.innerHTML = `<img src="${src}" alt="preview" style="max-height:56px;max-width:196px;object-fit:contain;border-radius:6px" onerror="this.parentElement.innerHTML='<span style=color:var(--danger);font-size:12px><i class=fas fa-exclamation-circle></i> تعذر تحميل الصورة</span>'">`;
+}
+
+/** Reset preview to current saved logo */
+function resetLogoPreview() {
+  _logoBase64 = '';
+  document.getElementById('logoCurrentValue').value = '';
+  document.getElementById('logoUrlInput').value = '';
+  document.getElementById('logoDropZone').innerHTML = `<i class="fas fa-cloud-upload-alt" style="font-size:28px;color:var(--muted);margin-bottom:8px;display:block"></i><span style="color:var(--muted);font-size:13px">اسحب الصورة هنا أو <strong style="color:var(--primary)">انقر للاختيار</strong></span><br><span style="font-size:11px;color:var(--text-light)">الحجم الأقصى: 2MB — يُفضَّل 200×60 بكسل</span>`;
+  document.getElementById('logoDropZone').style.borderColor = 'var(--border)';
+  document.getElementById('logoDropZone').style.background  = 'var(--bg-light)';
+  document.getElementById('logoPreviewBox').innerHTML = `<a class="logo" style="pointer-events:none"><div class="logo-icon"><i class="fas fa-globe-asia"></i></div>Trade<span>Hub</span></a>`;
+  hideLogoStatus();
+}
+
+/** Save all logo/identity settings to admin_settings table */
+async function savePlatformLogo() {
+  const logoVal    = document.getElementById('logoCurrentValue').value.trim()
+                  || document.getElementById('logoUrlInput').value.trim();
+  const logoText   = document.getElementById('logoTextInput').value.trim()   || 'TradeHub Pro';
+  const tagline    = document.getElementById('logoTaglineInput').value.trim();
+  const faviconVal = document.getElementById('logoFaviconInput').value.trim();
+
+  if (!logoVal && !logoText) {
+    showLogoStatus('يرجى رفع صورة أو إدخال رابط أو نص بديل', 'error'); return;
+  }
+
+  const btn = document.querySelector('[onclick="savePlatformLogo()"]');
+  if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري الحفظ...'; }
+
+  try {
+    const settingsRes = await fetch('tables/admin_settings?limit=50');
+    const settingsData = await settingsRes.json();
+    const existing = settingsData.data || [];
+
+    const upsert = async (key, value) => {
+      const found = existing.find(s => s.key === key);
+      if (found) {
+        await fetch(`tables/admin_settings/${found.id}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ value })
+        });
+      } else {
+        await fetch('tables/admin_settings', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ key, value, label: key, group: 'identity' })
+        });
+      }
+    };
+
+    await upsert('platform_logo', logoVal);
+    await upsert('platform_logo_text', logoText);
+    await upsert('platform_tagline', tagline);
+    await upsert('platform_favicon', faviconVal);
+
+    // Invalidate cache & apply live
+    localStorage.removeItem('tradehub_logo_cache');
+    if (logoVal) _renderLogoPreview(logoVal);
+
+    showLogoStatus('✅ تم حفظ هوية المنصة بنجاح! سيظهر الشعار في جميع صفحات الموقع', 'success');
+    toast('تم حفظ الشعار بنجاح ✅', 'success');
+  } catch (e) {
+    showLogoStatus('❌ حدث خطأ أثناء الحفظ: ' + e.message, 'error');
+  } finally {
+    if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-save"></i> حفظ هوية المنصة'; }
+  }
+}
+
+/** Delete / clear logo */
+async function clearPlatformLogo() {
+  if (!confirm('هل تريد حذف شعار المنصة والعودة للشعار النصي؟')) return;
+  try {
+    const settingsRes = await fetch('tables/admin_settings?limit=50');
+    const settingsData = await settingsRes.json();
+    const found = (settingsData.data || []).find(s => s.key === 'platform_logo');
+    if (found) {
+      await fetch(`tables/admin_settings/${found.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ value: '' })
+      });
+    }
+    localStorage.removeItem('tradehub_logo_cache');
+    resetLogoPreview();
+    showLogoStatus('تم حذف الشعار. سيعود الموقع للشعار النصي الافتراضي', 'info');
+    toast('تم حذف الشعار', 'info');
+  } catch { toast('حدث خطأ أثناء الحذف', 'error'); }
+}
+
+/** Load saved logo data into the form */
+async function loadLogoSettings() {
+  try {
+    const res = await fetch('tables/admin_settings?limit=50');
+    const data = await res.json();
+    const rows = data.data || [];
+    const get = key => (rows.find(r => r.key === key) || {}).value || '';
+
+    const logoVal = get('platform_logo');
+    const logoText = get('platform_logo_text') || 'TradeHub Pro';
+    const tagline = get('platform_tagline');
+    const favicon = get('platform_favicon');
+
+    document.getElementById('logoTextInput').value    = logoText;
+    document.getElementById('logoTaglineInput').value = tagline;
+    document.getElementById('logoFaviconInput').value = favicon;
+
+    if (logoVal) {
+      document.getElementById('logoCurrentValue').value = logoVal;
+      document.getElementById('logoUrlInput').value = logoVal.startsWith('http') ? logoVal : '';
+      _renderLogoPreview(logoVal);
+    }
+    if (favicon) {
+      const fp = document.getElementById('faviconPreview');
+      fp.innerHTML = `<img src="${favicon}" style="width:24px;height:24px;object-fit:contain" onerror="this.remove()">`;
+    }
+  } catch { /* silent */ }
+}
+
+function showLogoStatus(msg, type) {
+  const el = document.getElementById('logoSaveStatus');
+  const colors = {
+    success: { bg: '#f0fdf4', color: '#15803d', border: '#bbf7d0' },
+    error:   { bg: '#fef2f2', color: '#dc2626', border: '#fecaca' },
+    info:    { bg: '#eff6ff', color: '#1d4ed8', border: '#bfdbfe' }
+  };
+  const c = colors[type] || colors.info;
+  el.style.cssText = `display:block;background:${c.bg};color:${c.color};border:1px solid ${c.border};margin-top:14px;padding:10px 14px;border-radius:var(--radius-sm);font-size:13px;font-weight:600`;
+  el.textContent = msg;
+}
+function hideLogoStatus() {
+  const el = document.getElementById('logoSaveStatus');
+  if (el) el.style.display = 'none';
+}
+
+// Update favicon preview when input changes
+document.addEventListener('DOMContentLoaded', () => {
+  const fi = document.getElementById('logoFaviconInput');
+  if (fi) {
+    fi.addEventListener('input', () => {
+      const fp = document.getElementById('faviconPreview');
+      if (fp) {
+        if (fi.value && fi.value.startsWith('http')) {
+          fp.innerHTML = `<img src="${fi.value}" style="width:24px;height:24px;object-fit:contain" onerror="this.remove()">`;
+        } else {
+          fp.innerHTML = '<i class="fas fa-star" style="color:var(--muted);font-size:14px"></i>';
+        }
+      }
+    });
+  }
+});
+
+// ===== SETTINGS =====
+async function saveAllSettings() {
+  const updates = [
+    {key:'platform_name', val:document.getElementById('setting-platform_name')?.value},
+    {key:'commission_rate', val:document.getElementById('setting-commission_rate')?.value},
+    {key:'min_withdrawal', val:document.getElementById('setting-min_withdrawal')?.value},
+    {key:'max_order_amount', val:document.getElementById('setting-max_order_amount')?.value},
+    {key:'max_products_free', val:document.getElementById('setting-max_products_free')?.value},
+    {key:'maintenance_mode', val:String(document.getElementById('toggle-maintenance')?.checked)},
+    {key:'auto_approve_sellers', val:String(document.getElementById('toggle-auto_sellers')?.checked)},
+  ];
+  const settingsRes = await fetch('tables/admin_settings?limit=50');
+  const settingsData = await settingsRes.json();
+  const existing = settingsData.data||[];
+  for(const u of updates) {
+    const found = existing.find(s=>s.key===u.key);
+    if(found) await fetch(`tables/admin_settings/${found.id}`,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({value:u.val})});
+  }
+  toast('تم حفظ جميع الإعدادات بنجاح ✅','success');
+}
+
+// ===== ACTIVITY =====
+function loadFullActivity() {
+  const el = document.getElementById('fullActivityFeed');
+  if(!el) return;
+  el.innerHTML = `<div class="chart-header"><div class="chart-title"><i class="fas fa-stream"></i> كامل سجل الأنشطة</div></div>`;
+  renderActivityFeed('fullActivityFeed', 20);
+  // Actually re-append after header
+  const container = document.createElement('div');
+  el.appendChild(container);
+  const activities = Array.from({length:15},(_, i)=>`
+    <div class="activity-item">
+      <div class="activity-dot" style="background:rgba(255,107,53,0.12)"><i class="fas fa-circle" style="color:var(--primary);font-size:8px"></i></div>
+      <div class="activity-body"><div class="activity-title">نشاط النظام رقم ${i+1}</div><div class="activity-time">منذ ${i+1} ساعة</div></div>
+    </div>`);
+  container.innerHTML = activities.join('');
+  renderActivityFeed('fullActivityFeed', 8);
+}
+
+// ===== SUPPORT TICKETS =====
+let allTicketsData = [];
+async function loadTickets() {
+  try {
+    const r = await fetch('tables/support_tickets?limit=100');
+    const d = await r.json();
+    allTicketsData = d.data || [];
+    renderTickets(allTicketsData);
+    updateTicketStats(allTicketsData);
+    // Update nav badge
+    const openCount = allTicketsData.filter(t => t.status === 'open' || t.status === 'in_progress').length;
+    const badge = document.getElementById('navTicketBadge');
+    if(badge) { badge.textContent = openCount; badge.style.display = openCount ? '' : 'none'; }
+  } catch { toast('تعذر تحميل التذاكر','error'); }
+}
+
+function renderTickets(tickets) {
+  const tbody = document.getElementById('ticketsTableBody');
+  document.getElementById('ticketsPagInfo').textContent = `${tickets.length} تذكرة`;
+  if(!tickets.length) { tbody.innerHTML='<tr><td colspan="10" style="text-align:center;padding:30px;color:var(--muted)">لا توجد تذاكر</td></tr>'; return; }
+  const catMap = { payment:'المدفوعات', product:'المنتجات', account:'الحساب', shipping:'الشحن', other:'أخرى' };
+  const priMap = { critical:'حرجة', high:'عالية', medium:'متوسطة', low:'منخفضة' };
+  const stMap = { open:'مفتوحة', in_progress:'قيد المعالجة', resolved:'محلولة', closed:'مغلقة' };
+  const priColor = { critical:'badge-critical', high:'badge-high', medium:'badge-medium', low:'badge-low' };
+  const stColor = { open:'badge-open', in_progress:'badge-processing', resolved:'badge-resolved', closed:'badge-dismissed' };
+  tbody.innerHTML = tickets.map(t => `
+    <tr>
+      <td style="font-weight:700;color:var(--info);font-size:12px">${t.ticket_number}</td>
+      <td><div class="user-cell"><div class="user-av" style="background:rgba(59,130,246,0.7)">${(t.user_name||'?')[0]}</div>${t.user_name}</div></td>
+      <td><span class="badge badge-${t.user_role==='seller'?'seller':'buyer'}">${t.user_role==='seller'?'بائع':'مشتري'}</span></td>
+      <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:13px">${t.subject}</td>
+      <td style="font-size:12px;color:var(--muted)">${catMap[t.category]||t.category}</td>
+      <td><span class="badge ${priColor[t.priority]||''}">${priMap[t.priority]||t.priority}</span></td>
+      <td><span class="badge ${stColor[t.status]||''}">${stMap[t.status]||t.status}</span></td>
+      <td style="font-size:12px;color:var(--muted)">${t.assigned_to||'<span style="color:var(--danger)">غير مكلف</span>'}</td>
+      <td style="font-size:12px;color:var(--muted)">${t.created_date}</td>
+      <td><div class="action-btns">
+        <button class="act-btn view" title="عرض" onclick="viewTicket('${t.id}')"><i class="fas fa-eye"></i></button>
+        ${t.status==='open'?`<button class="act-btn approve" title="قيد المعالجة" onclick="updateTicketStatus('${t.id}','in_progress')"><i class="fas fa-play"></i></button>`:''}
+        ${['open','in_progress'].includes(t.status)?`<button class="act-btn edit" title="حل التذكرة" onclick="updateTicketStatus('${t.id}','resolved')"><i class="fas fa-check"></i></button>`:''}
+        <button class="act-btn delete" title="إغلاق" onclick="updateTicketStatus('${t.id}','closed')"><i class="fas fa-times"></i></button>
+      </div></td>
+    </tr>`).join('');
+}
+
+function updateTicketStats(tickets) {
+  document.getElementById('tk-open').textContent = tickets.filter(t=>t.status==='open').length;
+  document.getElementById('tk-inprog').textContent = tickets.filter(t=>t.status==='in_progress').length;
+  document.getElementById('tk-resolved').textContent = tickets.filter(t=>t.status==='resolved').length;
+  document.getElementById('tk-closed').textContent = tickets.filter(t=>t.status==='closed').length;
+}
+
+function filterTickets() {
+  const q = (document.getElementById('ticketsSearch').value||'').toLowerCase();
+  const cat = document.getElementById('ticketsCatFilter').value;
+  const st = document.getElementById('ticketsStatusFilter').value;
+  const pr = document.getElementById('ticketsPriorityFilter').value;
+  renderTickets(allTicketsData.filter(t =>
+    (!q || (t.ticket_number||'').toLowerCase().includes(q) || (t.user_name||'').toLowerCase().includes(q) || (t.subject||'').toLowerCase().includes(q)) &&
+    (!cat || t.category===cat) && (!st || t.status===st) && (!pr || t.priority===pr)
+  ));
+}
+
+async function updateTicketStatus(id, status) {
+  await fetch(`tables/support_tickets/${id}`,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({status,updated_date:new Date().toISOString().split('T')[0]})});
+  const stLbl = {open:'مفتوحة',in_progress:'قيد المعالجة',resolved:'محلولة',closed:'مغلقة'};
+  toast(`تم تغيير حالة التذكرة إلى: ${stLbl[status]}`,'success');
+  allTicketsData = []; loadTickets();
+}
+
+function viewTicket(id) {
+  const t = allTicketsData.find(x=>x.id===id);
+  if(!t) return;
+  const catMap = { payment:'المدفوعات', product:'المنتجات', account:'الحساب', shipping:'الشحن', other:'أخرى' };
+  const priMap = { critical:'حرجة', high:'عالية', medium:'متوسطة', low:'منخفضة' };
+  const stMap = { open:'مفتوحة', in_progress:'قيد المعالجة', resolved:'محلولة', closed:'مغلقة' };
+  document.getElementById('ticketDetailNumber').textContent = t.ticket_number;
+  document.getElementById('ticketDetailBody').innerHTML = `
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px">
+      <div><div style="font-size:11px;color:var(--muted);text-transform:uppercase;margin-bottom:4px">المستخدم</div><div style="font-size:14px;font-weight:700;color:white">${t.user_name}</div></div>
+      <div><div style="font-size:11px;color:var(--muted);text-transform:uppercase;margin-bottom:4px">البريد الإلكتروني</div><div style="font-size:13px;color:var(--light)">${t.user_email}</div></div>
+      <div><div style="font-size:11px;color:var(--muted);text-transform:uppercase;margin-bottom:4px">الفئة</div><div style="font-size:13px">${catMap[t.category]||t.category}</div></div>
+      <div><div style="font-size:11px;color:var(--muted);text-transform:uppercase;margin-bottom:4px">الأولوية</div><div>${priMap[t.priority]}</div></div>
+      <div><div style="font-size:11px;color:var(--muted);text-transform:uppercase;margin-bottom:4px">الحالة</div><div>${stMap[t.status]}</div></div>
+      <div><div style="font-size:11px;color:var(--muted);text-transform:uppercase;margin-bottom:4px">المكلف</div><div style="font-size:13px">${t.assigned_to||'لم يُكلَّف بعد'}</div></div>
+    </div>
+    <div style="background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:8px;padding:14px">
+      <div style="font-size:11px;color:var(--muted);text-transform:uppercase;margin-bottom:8px">الموضوع</div>
+      <div style="font-size:14px;font-weight:700;color:white;margin-bottom:12px">${t.subject}</div>
+      <div style="font-size:11px;color:var(--muted);text-transform:uppercase;margin-bottom:8px">رسالة المستخدم</div>
+      <div style="font-size:13px;color:var(--light);line-height:1.8">${t.message}</div>
+    </div>
+    <div style="margin-top:16px">
+      <label style="font-size:11px;color:var(--muted);text-transform:uppercase;display:block;margin-bottom:8px">تكليف إلى</label>
+      <div style="display:flex;gap:8px">
+        <select class="form-control" id="assignTicketTo">
+          <option value="">— اختر المسؤول —</option>
+          <option value="المدير العام">المدير العام</option>
+          <option value="سارة المشرف">سارة المشرف</option>
+        </select>
+        <button class="btn btn-gold btn-sm" onclick="assignTicket('${t.id}')">تكليف</button>
+      </div>
+    </div>`;
+  document.getElementById('ticketResolveBtn').onclick = () => { updateTicketStatus(t.id,'resolved'); closeModal('ticketDetailModal'); };
+  openModal('ticketDetailModal');
+}
+
+async function assignTicket(id) {
+  const v = document.getElementById('assignTicketTo').value;
+  if(!v) return;
+  await fetch(`tables/support_tickets/${id}`,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({assigned_to:v,status:'in_progress'})});
+  toast(`تم تكليف التذكرة لـ ${v}`,'success'); allTicketsData=[]; loadTickets(); closeModal('ticketDetailModal');
+}
+
+async function addTicket() {
+  const user = document.getElementById('newTkUser').value.trim();
+  const email = document.getElementById('newTkEmail').value.trim();
+  const subject = document.getElementById('newTkSubject').value.trim();
+  if(!user||!email||!subject){toast('يرجى ملء جميع الحقول المطلوبة','error');return;}
+  const newId = 'TK-2026-' + String(Math.floor(Math.random()*900+100)).padStart(4,'0');
+  await fetch('tables/support_tickets',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
+    ticket_number:newId,user_name:user,user_email:email,
+    category:document.getElementById('newTkCategory').value,
+    priority:document.getElementById('newTkPriority').value,
+    subject,message:document.getElementById('newTkMessage').value,
+    status:'open',assigned_to:'',created_date:new Date().toISOString().split('T')[0],updated_date:new Date().toISOString().split('T')[0]
+  })});
+  toast('تم إنشاء التذكرة بنجاح ✅','success'); closeModal('addTicketModal'); allTicketsData=[]; loadTickets();
+}
+
+function exportTicketsCSV() {
+  if(!allTicketsData.length){toast('لا توجد بيانات للتصدير','warning');return;}
+  const headers = ['رقم التذكرة','المستخدم','البريد','الفئة','الأولوية','الحالة','التاريخ'];
+  const rows = allTicketsData.map(t=>[t.ticket_number,t.user_name,t.user_email,t.category,t.priority,t.status,t.created_date]);
+  downloadCSV(headers, rows, 'support_tickets.csv');
+}
+
+// ===== REVIEWS PAGE =====
+let allReviewsData = [];
+async function loadReviewsPage() {
+  try {
+    const r = await fetch('tables/product_reviews?limit=100');
+    const d = await r.json();
+    allReviewsData = d.data || [];
+    renderReviewsPage(allReviewsData);
+    updateReviewStats(allReviewsData);
+    const flaggedCount = allReviewsData.filter(r=>r.flagged||r.status==='flagged').length;
+    const pendingCount = allReviewsData.filter(r=>r.status==='pending').length;
+    const badge = document.getElementById('navReviewBadge');
+    if(badge) { const c = flaggedCount+pendingCount; badge.textContent=c; badge.style.display=c?'':'none'; }
+  } catch { toast('تعذر تحميل التقييمات','error'); }
+}
+
+function renderReviewsPage(reviews) {
+  const tbody = document.getElementById('reviewsTableBody');
+  document.getElementById('reviewsPagInfo').textContent = `${reviews.length} تقييم`;
+  if(!reviews.length){tbody.innerHTML='<tr><td colspan="9" style="text-align:center;padding:30px;color:var(--muted)">لا توجد تقييمات</td></tr>';return;}
+  const stColor={pending:'badge-pending',approved:'badge-active',rejected:'badge-suspended',flagged:'badge-critical'};
+  const stLbl={pending:'بانتظار الموافقة',approved:'معتمد',rejected:'مرفوض',flagged:'مُبلَّغ عنه'};
+  tbody.innerHTML = reviews.map(rv=>`
+    <tr>
+      <td style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:13px;font-weight:600">${rv.product_name}</td>
+      <td><div class="user-cell"><div class="user-av" style="background:rgba(245,158,11,0.7)">${(rv.reviewer_name||'?')[0]}</div>${rv.reviewer_name}</div></td>
+      <td>
+        <div style="display:flex;gap:2px;align-items:center">
+          ${[1,2,3,4,5].map(i=>`<i class="fas fa-star" style="font-size:12px;color:${i<=rv.rating?'var(--gold)':'rgba(255,255,255,0.15)'}"></i>`).join('')}
+          <span style="font-size:12px;font-weight:700;color:var(--gold);margin-right:4px">${rv.rating}</span>
+        </div>
+      </td>
+      <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px;color:var(--light)">${rv.review_text}</td>
+      <td><span class="badge ${stColor[rv.status]||''}">${stLbl[rv.status]||rv.status}</span></td>
+      <td>${rv.flagged?'<span style="color:var(--danger)"><i class="fas fa-flag"></i> نعم</span>':'<span style="color:var(--muted)">لا</span>'}</td>
+      <td style="text-align:center;color:var(--light)">${rv.helpful_count||0} 👍</td>
+      <td style="font-size:12px;color:var(--muted)">${rv.created_date}</td>
+      <td><div class="action-btns">
+        ${rv.status!=='approved'?`<button class="act-btn approve" title="اعتماد" onclick="reviewAction('${rv.id}','approved')"><i class="fas fa-check"></i></button>`:''}
+        ${rv.status!=='rejected'?`<button class="act-btn suspend" title="رفض" onclick="reviewAction('${rv.id}','rejected')"><i class="fas fa-ban"></i></button>`:''}
+        <button class="act-btn delete" title="حذف" onclick="confirmDelete('تقييم','${rv.id}')"><i class="fas fa-trash"></i></button>
+      </div></td>
+    </tr>`).join('');
+}
+
+function updateReviewStats(reviews) {
+  document.getElementById('rv-pending').textContent = reviews.filter(r=>r.status==='pending').length;
+  document.getElementById('rv-approved').textContent = reviews.filter(r=>r.status==='approved').length;
+  document.getElementById('rv-flagged').textContent = reviews.filter(r=>r.flagged||r.status==='flagged').length;
+  const avg = reviews.length ? (reviews.reduce((s,r)=>s+(r.rating||0),0)/reviews.length).toFixed(1) : '—';
+  document.getElementById('rv-avg-rating').textContent = `★ ${avg}`;
+}
+
+function filterReviewsPage() {
+  const q = (document.getElementById('reviewsSearch').value||'').toLowerCase();
+  const st = document.getElementById('reviewsStatusFilter').value;
+  const rt = document.getElementById('reviewsRatingFilter').value;
+  renderReviewsPage(allReviewsData.filter(rv=>
+    (!q||(rv.reviewer_name||'').toLowerCase().includes(q)||(rv.product_name||'').toLowerCase().includes(q)) &&
+    (!st||rv.status===st) && (!rt||String(rv.rating)===rt)
+  ));
+}
+
+async function reviewAction(id, status) {
+  await fetch(`tables/product_reviews/${id}`,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({status,flagged:status==='flagged'})});
+  const lbl={approved:'اعتمدت',rejected:'رُفضت',flagged:'أُبلغ عنها'};
+  toast(`تم: التقييم ${lbl[status]||status}`,'success'); allReviewsData=[]; loadReviewsPage();
+}
+
+function exportReviewsCSV() {
+  if(!allReviewsData.length){toast('لا توجد بيانات','warning');return;}
+  const headers=['المنتج','المراجع','التقييم','الحالة','التاريخ'];
+  const rows = allReviewsData.map(r=>[r.product_name,r.reviewer_name,r.rating,r.status,r.created_date]);
+  downloadCSV(headers,rows,'reviews.csv');
+}
+
+// ===== USER DETAIL MODAL =====
+function viewUser(id) {
+  const u = allUsersData.find(u=>u.id===id);
+  if(!u) return;
+  document.getElementById('userDetailBody').innerHTML = `
+    <div style="display:flex;align-items:center;gap:16px;padding:16px;background:rgba(255,255,255,0.03);border-radius:12px;margin-bottom:20px">
+      <div style="width:64px;height:64px;border-radius:50%;background:linear-gradient(135deg,var(--primary),var(--gold));display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:900;color:white;flex-shrink:0">${(u.name||'؟')[0]}</div>
+      <div>
+        <div style="font-size:18px;font-weight:800;color:white">${u.name}</div>
+        <div style="font-size:13px;color:var(--muted)">${u.email}</div>
+        <div style="display:flex;gap:8px;margin-top:6px">
+          <span class="badge badge-${u.role}">${u.role==='buyer'?'مشتري':u.role==='seller'?'بائع':'مدير'}</span>
+          <span class="badge badge-${u.status}">${{active:'نشط',pending:'معلق',suspended:'موقوف',banned:'محظور'}[u.status]||u.status}</span>
+        </div>
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div style="background:var(--card2);border:1px solid var(--border);border-radius:8px;padding:12px">
+        <div style="font-size:11px;color:var(--muted);margin-bottom:4px">الدولة</div>
+        <div style="font-size:14px;font-weight:600;color:white"><i class="fas fa-map-marker-alt" style="color:var(--primary);margin-left:6px"></i>${u.country}</div>
+      </div>
+      <div style="background:var(--card2);border:1px solid var(--border);border-radius:8px;padding:12px">
+        <div style="font-size:11px;color:var(--muted);margin-bottom:4px">تاريخ التسجيل</div>
+        <div style="font-size:14px;font-weight:600;color:white">${u.join_date||'—'}</div>
+      </div>
+      <div style="background:var(--card2);border:1px solid var(--border);border-radius:8px;padding:12px">
+        <div style="font-size:11px;color:var(--muted);margin-bottom:4px">إجمالي الطلبات</div>
+        <div style="font-size:22px;font-weight:900;color:var(--info)">${u.total_orders||0}</div>
+      </div>
+      <div style="background:var(--card2);border:1px solid var(--border);border-radius:8px;padding:12px">
+        <div style="font-size:11px;color:var(--muted);margin-bottom:4px">إجمالي الإنفاق</div>
+        <div style="font-size:22px;font-weight:900;color:var(--success)">${u.total_spent>0?'$'+u.total_spent.toLocaleString():'$0'}</div>
+      </div>
+    </div>
+    <div style="margin-top:14px;padding:12px 14px;background:rgba(255,255,255,0.02);border:1px solid var(--border);border-radius:8px;display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn btn-sm ${u.status==='active'?'btn-danger':'btn-success'}" onclick="updateUserStatus('${u.id}',${u.status==='active'?"'suspended'":"'active'"}); closeModal('userDetailModal');">
+        <i class="fas fa-${u.status==='active'?'ban':'check'}"></i> ${u.status==='active'?'توقيف الحساب':'تفعيل الحساب'}
+      </button>
+      <button class="btn btn-sm btn-outline" onclick="closeModal('userDetailModal')">إغلاق</button>
+    </div>`;
+  openModal('userDetailModal');
+}
+
+// ===== LOGS FUNCTIONS =====
+let logsFilterType = 'ALL';
+function filterLogsByType(type, btn) {
+  logsFilterType = type;
+  document.querySelectorAll('#page-logs .chart-tab').forEach(t=>t.classList.remove('active'));
+  btn.classList.add('active');
+  filterLogs();
+}
+function filterLogs() {
+  const q = (document.getElementById('logsSearch')?.value||'').toLowerCase();
+  const entries = document.querySelectorAll('#systemLogsFeed div[data-type]');
+  let visible = 0;
+  entries.forEach(e=>{
+    const tp = e.dataset.type;
+    const text = e.textContent.toLowerCase();
+    const typeMatch = logsFilterType==='ALL' || tp===logsFilterType;
+    const textMatch = !q || text.includes(q);
+    e.style.display = (typeMatch && textMatch) ? '' : 'none';
+    if(typeMatch&&textMatch) visible++;
+  });
+  const counter = document.getElementById('logsCounter');
+  if(counter) counter.textContent = `${visible} سجل`;
+}
+function exportLogsCSV() {
+  const entries = document.querySelectorAll('#systemLogsFeed div[data-type]');
+  let csv = 'النوع,الرسالة\n';
+  entries.forEach(e=>{ csv += `"${e.dataset.type}","${e.textContent.trim()}"\n`; });
+  const blob = new Blob(['\uFEFF'+csv], {type:'text/csv;charset=utf-8'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href=url; a.download='system_logs.csv'; a.click();
+  toast('تم تصدير السجلات','success');
+}
+
+// ===== CSV EXPORT UTILITY =====
+function downloadCSV(headers, rows, filename) {
+  let csv = headers.join(',') + '\n';
+  rows.forEach(row => { csv += row.map(v=>`"${String(v||'').replace(/"/g,'""')}"`).join(',') + '\n'; });
+  const blob = new Blob(['\uFEFF'+csv], {type:'text/csv;charset=utf-8'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href=url; a.download=filename; a.click();
+  URL.revokeObjectURL(url);
+  toast(`تم تصدير ${filename} بنجاح ✅`,'success');
+}
+
+// ===== USERS CSV EXPORT =====
+function exportUsersCSV() {
+  if(!allUsersData.length){toast('لا توجد بيانات','warning');return;}
+  downloadCSV(['الاسم','البريد','الدور','الدولة','الحالة','الطلبات','الإجمالي','تاريخ التسجيل'],
+    allUsersData.map(u=>[u.name,u.email,u.role,u.country,u.status,u.total_orders||0,u.total_spent||0,u.join_date||'']),
+    'users_export.csv');
+}
+function exportOrdersData() {
+  if(!dataCache.orders.length){toast('لا توجد بيانات','warning');return;}
+  downloadCSV(['رقم الطلب','المشتري','المورد','المنتج','الكمية','القيمة','الحالة','التاريخ'],
+    dataCache.orders.map(o=>[o.order_number,o.buyer_name,o.seller_name,o.product_name,o.quantity||0,o.amount||0,o.status,o.created_date||'']),
+    'orders_export.csv');
+}
+
+// ===== LIVE KPI FROM API =====
+async function loadLiveKPIs() {
+  try {
+    const [usersR, prodsR] = await Promise.all([
+      fetch('tables/admin_users?limit=1'),
+      fetch('tables/products?limit=1')
+    ]);
+    const usersD = await usersR.json();
+    const prodsD = await prodsR.json();
+    if(usersD.total) document.getElementById('kpi-users').textContent = usersD.total.toLocaleString();
+    if(prodsD.total) {
+      // Update overview second row
+      const prodEl = document.querySelector('[data-kpi="products"]');
+      if(prodEl) prodEl.textContent = prodsD.total.toLocaleString();
+    }
+  } catch {}
+}
+
+// ===== MISC =====
+function selectAll(cls) {
+  const master = event.target;
+  document.querySelectorAll(`.${cls}`).forEach(cb => cb.checked = master.checked);
+}
+function confirmDelete(type, id) {
+  document.getElementById('confirmTitle').textContent = `تأكيد الحذف`;
+  document.getElementById('confirmText').innerHTML = `هل أنت متأكد من حذف هذا <strong>${type}</strong>؟ لا يمكن التراجع عن هذا الإجراء.`;
+  document.getElementById('confirmBtn').onclick = async() => {
+    if(id) { const t = type==='مستخدم'||type==='مورد'||type==='مشتري'?'admin_users':type==='منتج'?'products':type==='فئة'?'categories':'admin_users'; await fetch(`tables/${t}/${id}`,{method:'DELETE'}); }
+    toast(`تم حذف ${type} بنجاح`,'warning');
+    closeModal('confirmModal');
+    dataCache = { users:[], products:[], orders:[], reports:[], categories:[], settings:[] };
+  };
+  openModal('confirmModal');
+}
+function refreshOverview() { 
+  toast('جارٍ تحديث البيانات...','info'); 
+  loadLiveKPIs();
+  setTimeout(()=>toast('تم تحديث البيانات ✅','success'),1200); 
+}
+function exportReport() { exportUsersCSV(); }
+function exportOrders() { exportOrdersData(); }
+function exportFinance() { 
+  downloadCSV(
+    ['الشهر','المبيعات','العمولة','الاسترجاعات','الطلبات','معدل النمو'],
+    [['يناير 2026','128400','6420','2100','2840','+12%'],['فبراير 2026','142800','7140','1800','3120','+11.2%'],['مارس 2026','156200','7810','2400','3450','+9.4%'],['أبريل 2026','168900','8445','3200','3890','+8.1%'],['مايو 2026','245700','12285','2900','5240','+45.4%']],
+    'finance_report.csv'
+  );
+}
+function clearLogs() { if(!confirm('مسح سجلات النظام؟')) return; document.getElementById('systemLogsFeed').innerHTML='<div style="color:var(--muted)">تم مسح السجلات.</div>'; toast('تم مسح السجلات','warning'); }
+function addAdmin() { toast('تم إضافة المدير بنجاح ✅','success'); closeModal('addAdminModal'); }
+function toggleSidebar() { document.getElementById('adminSidebar').classList.toggle('open'); }
+
+// ===== INIT =====
+window.addEventListener('DOMContentLoaded', () => {
+  initCharts();
+  renderActivityFeed('activityFeed', 6);
+  renderAlerts();
+  loadLiveKPIs();
+  // Responsive
+  if(window.innerWidth < 900) {
+    document.getElementById('sidebarToggle').style.display='flex';
+  }
+  // Logs timestamp
+  const logsEl = document.getElementById('logsLastUpdate');
+  if(logsEl) logsEl.textContent = new Date().toLocaleTimeString('ar-SA');
+  // Load tickets count for badge silently
+  fetch('tables/support_tickets?limit=100').then(r=>r.json()).then(d=>{
+    const items = d.data||[];
+    const open = items.filter(t=>t.status==='open'||t.status==='in_progress').length;
+    const badge = document.getElementById('navTicketBadge');
+    if(badge) { badge.textContent=open; badge.style.display=open?'':'none'; }
+  }).catch(()=>{});
+  fetch('tables/product_reviews?limit=100').then(r=>r.json()).then(d=>{
+    const items = d.data||[];
+    const cnt = items.filter(r=>r.status==='pending'||r.status==='flagged').length;
+    const badge = document.getElementById('navReviewBadge');
+    if(badge) { badge.textContent=cnt; badge.style.display=cnt?'':'none'; }
+  }).catch(()=>{});
+
+  // Pending users badge
+  fetch('tables/pending_users?limit=200').then(r=>r.json()).then(d=>{
+    const items = d.data||[];
+    const cnt = items.filter(u=>u.status==='pending').length;
+    const badge = document.getElementById('navPendingBadge');
+    if(badge) { badge.textContent=cnt; badge.style.display=cnt?'':'none'; }
+  }).catch(()=>{});
+});
+
+// ═══════════════════════════════════════════════════════════
+//  PENDING USERS — Registration Approval System
+// ═══════════════════════════════════════════════════════════
+
+let allPendingData = [];
+
+async function loadPendingUsers() {
+  try {
+    const res  = await fetch('tables/pending_users?limit=500');
+    const data = await res.json();
+    allPendingData = data.data || [];
+
+    // Update KPI counters
+    const pending  = allPendingData.filter(u => u.status === 'pending').length;
+    const approved = allPendingData.filter(u => u.status === 'approved').length;
+    const rejected = allPendingData.filter(u => u.status === 'rejected').length;
+    const total    = allPendingData.length;
+
+    document.getElementById('pu-pending').textContent  = pending;
+    document.getElementById('pu-approved').textContent = approved;
+    document.getElementById('pu-rejected').textContent = rejected;
+    document.getElementById('pu-total').textContent    = total;
+
+    // Update sidebar badge
+    const badge = document.getElementById('navPendingBadge');
+    if (badge) { badge.textContent = pending; badge.style.display = pending ? '' : 'none'; }
+
+    // Default filter: show pending only
+    filterPendingUsers();
+
+  } catch (err) {
+    console.error('loadPendingUsers:', err);
+    document.getElementById('pendingUsersTableBody').innerHTML =
+      '<tr><td colspan="9" style="text-align:center;color:var(--danger);padding:20px"><i class="fas fa-exclamation-triangle"></i> فشل في تحميل البيانات</td></tr>';
+  }
+}
+
+function filterPendingUsers() {
+  const search     = (document.getElementById('pendingSearch')?.value || '').toLowerCase();
+  const statusFilt = document.getElementById('pendingStatusFilter')?.value || '';
+  const roleFilt   = document.getElementById('pendingRoleFilter')?.value  || '';
+
+  const filtered = allPendingData.filter(u => {
+    const matchSearch = !search || (u.name||'').toLowerCase().includes(search) || (u.email||'').toLowerCase().includes(search) || (u.company_name||'').toLowerCase().includes(search);
+    const matchStatus = !statusFilt || u.status === statusFilt;
+    const matchRole   = !roleFilt   || u.role   === roleFilt;
+    return matchSearch && matchStatus && matchRole;
+  });
+
+  renderPendingUsers(filtered);
+}
+
+function renderPendingUsers(list) {
+  const tbody = document.getElementById('pendingUsersTableBody');
+  const info  = document.getElementById('pendingPagInfo');
+  if (!tbody) return;
+
+  if (!list.length) {
+    tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:30px;color:var(--muted)"><i class="fas fa-inbox"></i> لا توجد طلبات تطابق الفلتر</td></tr>';
+    if (info) info.innerHTML = '<span>0 طلب</span>';
+    return;
+  }
+
+  const countryNames = { SA:'🇸🇦 السعودية', AE:'🇦🇪 الإمارات', EG:'🇪🇬 مصر', KW:'🇰🇼 الكويت', QA:'🇶🇦 قطر', BH:'🇧🇭 البحرين', OM:'🇴🇲 عُمان', JO:'🇯🇴 الأردن', LB:'🇱🇧 لبنان', IQ:'🇮🇶 العراق', MA:'🇲🇦 المغرب', TR:'🇹🇷 تركيا', CN:'🇨🇳 الصين', OTHER:'🌍 أخرى' };
+
+  tbody.innerHTML = list.map((u, i) => {
+    const statusConf = {
+      pending:  { label: '⏳ بانتظار المراجعة', color: 'var(--warning)', bg: 'rgba(245,158,11,0.12)' },
+      approved: { label: '✅ تمت الموافقة',     color: 'var(--success)', bg: 'rgba(16,185,129,0.12)' },
+      rejected: { label: '❌ مرفوض',             color: 'var(--danger)',  bg: 'rgba(239,68,68,0.12)'  }
+    };
+    const sc = statusConf[u.status] || statusConf.pending;
+    const roleLabel = u.role === 'seller' ? '<span style="background:rgba(245,158,11,0.2);color:var(--gold);padding:2px 8px;border-radius:20px;font-size:11px;font-weight:700">🏪 مورد</span>' : '<span style="background:rgba(59,130,246,0.2);color:var(--info);padding:2px 8px;border-radius:20px;font-size:11px;font-weight:700">🛒 مشتري</span>';
+    const date = u.created_date ? new Date(u.created_date).toLocaleDateString('ar-SA', {day:'2-digit',month:'short',year:'numeric'}) : '—';
+    const country = countryNames[u.country] || (u.country || '—');
+    const company = u.company_name ? `<br/><small style="color:var(--muted)">${u.company_name}</small>` : '';
+
+    const actionBtns = u.status === 'pending' ? `
+      <button onclick="approvePending('${u.id}')" title="موافقة" style="background:rgba(16,185,129,0.15);border:1px solid rgba(16,185,129,0.3);color:var(--success);padding:5px 12px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;margin-left:4px;transition:all 0.2s" onmouseover="this.style.background='rgba(16,185,129,0.3)'" onmouseout="this.style.background='rgba(16,185,129,0.15)'">
+        <i class="fas fa-check"></i> موافقة
+      </button>
+      <button onclick="rejectPending('${u.id}', '${(u.name||'').replace(/'/g,'')}')" title="رفض" style="background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.25);color:var(--danger);padding:5px 12px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;transition:all 0.2s" onmouseover="this.style.background='rgba(239,68,68,0.25)'" onmouseout="this.style.background='rgba(239,68,68,0.1)'">
+        <i class="fas fa-times"></i> رفض
+      </button>` :
+      u.status === 'approved' ? `<span style="color:var(--success);font-size:12px"><i class="fas fa-check-circle"></i> تم التفعيل<br/><small style="color:var(--muted)">${u.reviewed_by||''}</small></span>` :
+      `<span style="color:var(--danger);font-size:12px"><i class="fas fa-times-circle"></i> مرفوض<br/><small style="color:var(--muted)" title="${u.rejection_reason||''}">${(u.rejection_reason||'').substring(0,20)||'—'}</small></span>`;
+
+    return `
+    <tr>
+      <td style="color:var(--muted);font-size:12px">${i+1}</td>
+      <td>
+        <div style="display:flex;align-items:center;gap:10px">
+          <div style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,var(--primary),var(--gold));display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:white;flex-shrink:0">
+            ${(u.name||'U').substring(0,2).toUpperCase()}
+          </div>
+          <div>
+            <div style="font-weight:700;font-size:13px">${u.name||'—'}</div>
+            <div style="font-size:11px;color:var(--muted)">${u.phone||''}</div>
+          </div>
+        </div>
+      </td>
+      <td style="font-size:12px;color:var(--light)">${u.email||'—'}</td>
+      <td>${roleLabel}${company}</td>
+      <td style="font-size:12px">${country}</td>
+      <td style="font-size:12px;color:var(--muted)">${u.company_name||'—'}</td>
+      <td style="font-size:12px;color:var(--light)">${date}</td>
+      <td>
+        <span style="background:${sc.bg};color:${sc.color};padding:4px 10px;border-radius:20px;font-size:11px;font-weight:700;white-space:nowrap">
+          ${sc.label}
+        </span>
+      </td>
+      <td>${actionBtns}</td>
+    </tr>`;
+  }).join('');
+
+  if (info) info.innerHTML = `<span>${list.length} طلب مُعروض</span>`;
+}
+
+// ── Open Approve modal ────────────────────────────
+function approvePending(pendingId) {
+  const record = allPendingData.find(u => u.id === pendingId);
+  if (!record) return;
+
+  document.getElementById('approvePendingId').value = pendingId;
+  const countryNames = { SA:'🇸🇦 السعودية', AE:'🇦🇪 الإمارات', EG:'🇪🇬 مصر', KW:'🇰🇼 الكويت', QA:'🇶🇦 قطر', BH:'🇧🇭 البحرين', OM:'🇴🇲 عُمان', JO:'🇯🇴 الأردن', LB:'🇱🇧 لبنان', IQ:'🇮🇶 العراق', MA:'🇲🇦 المغرب', TR:'🇹🇷 تركيا', CN:'🇨🇳 الصين', OTHER:'🌍 أخرى' };
+  const country = countryNames[record.country] || record.country || '—';
+
+  document.getElementById('approvePendingDetails').innerHTML = `
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:13px">
+      <div><span style="color:var(--muted)">الاسم:</span> <strong style="color:var(--text)">${record.name||'—'}</strong></div>
+      <div><span style="color:var(--muted)">البريد:</span> <span style="color:var(--light)">${record.email||'—'}</span></div>
+      <div><span style="color:var(--muted)">الدور:</span> <span style="color:var(--gold)">${record.role==='seller'?'مورد':'مشتري'}</span></div>
+      <div><span style="color:var(--muted)">الدولة:</span> ${country}</div>
+      ${record.company_name ? `<div colspan="2"><span style="color:var(--muted)">الشركة:</span> ${record.company_name}</div>` : ''}
+      ${record.phone ? `<div><span style="color:var(--muted)">الهاتف:</span> ${record.phone}</div>` : ''}
+    </div>`;
+
+  openModal('approvePendingModal');
+}
+
+// ── Submit Approve ────────────────────────────────
+async function submitApprovePending() {
+  const pendingId = document.getElementById('approvePendingId').value;
+  const record    = allPendingData.find(u => u.id === pendingId);
+  if (!record) return;
+
+  const approveBtn = document.querySelector('#approvePendingModal .modal-footer .btn:last-child');
+  if (approveBtn) { approveBtn.disabled = true; approveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جارٍ التفعيل...'; }
+
+  const admin     = JSON.parse(localStorage.getItem('tradehub_admin') || '{}');
+  const adminName = admin.name || 'المدير العام';
+
+  try {
+    // 1. PATCH pending record → approved
+    await fetch(`tables/pending_users/${pendingId}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        status:      'approved',
+        reviewed_by: adminName,
+        reviewed_at: new Date().toISOString()
+      })
+    });
+
+    // 2. Check if already registered (avoid duplicate)
+    const regRes   = await fetch('tables/registered_users?limit=500');
+    const regData  = await regRes.json();
+    const regUsers = regData.data || [];
+    const exists   = regUsers.find(u => u.email?.toLowerCase() === record.email?.toLowerCase());
+
+    if (!exists) {
+      // 3. Create active account in registered_users
+      await fetch('tables/registered_users', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name:          record.name,
+          email:         record.email,
+          password_hash: record.password_hash,
+          role:          record.role,
+          country:       record.country || '',
+          company_name:  record.company_name || '',
+          phone:         record.phone || '',
+          status:        'active',
+          jwt_secret:    'usr_' + Date.now() + '_' + Math.random().toString(36).slice(2,10),
+          created_date:  new Date().toISOString(),
+          last_login:    '',
+          pending_ref:   pendingId,
+          avatar:        (record.name||'U').substring(0,2)
+        })
+      });
+    }
+
+    closeModal('approvePendingModal');
+    toast(`✅ تم تفعيل حساب "${record.name}" بنجاح! يمكنه الآن تسجيل الدخول.`, 'success');
+    addAdminLog(`تم قبول طلب تسجيل المستخدم: ${record.name} (${record.email})`, 'success');
+    await loadPendingUsers();
+
+  } catch (err) {
+    console.error('submitApprovePending:', err);
+    toast('حدث خطأ أثناء معالجة الطلب', 'error');
+  } finally {
+    if (approveBtn) { approveBtn.disabled = false; approveBtn.innerHTML = '<i class="fas fa-check-circle"></i> موافقة وتفعيل الحساب'; }
+  }
+}
+
+// ── Open Reject modal ────────────────────────────
+function rejectPending(pendingId, name) {
+  document.getElementById('rejectPendingId').value = pendingId;
+  document.getElementById('rejectPendingName').innerHTML =
+    `رفض طلب تسجيل: <strong style="color:var(--text)">"${name}"</strong>`;
+  document.getElementById('rejectReasonSelect').value = '';
+  document.getElementById('rejectCustomReason').value = '';
+  document.getElementById('customReasonGroup').style.display = 'none';
+  openModal('rejectPendingModal');
+}
+
+function updateRejectCustom() {
+  const val = document.getElementById('rejectReasonSelect').value;
+  document.getElementById('customReasonGroup').style.display = val === 'custom' ? 'block' : 'none';
+}
+
+// ── Submit Reject ─────────────────────────────────
+async function submitRejectPending() {
+  const pendingId = document.getElementById('rejectPendingId').value;
+  const selectVal = document.getElementById('rejectReasonSelect').value;
+  const custom    = document.getElementById('rejectCustomReason').value.trim();
+
+  let reason = selectVal === 'custom' ? custom : selectVal;
+  if (!reason) { toast('يرجى اختيار سبب الرفض', 'error'); return; }
+
+  const record    = allPendingData.find(u => u.id === pendingId);
+  const admin     = JSON.parse(localStorage.getItem('tradehub_admin') || '{}');
+  const adminName = admin.name || 'المدير العام';
+
+  try {
+    await fetch(`tables/pending_users/${pendingId}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        status:           'rejected',
+        rejection_reason: reason,
+        reviewed_by:      adminName,
+        reviewed_at:      new Date().toISOString()
+      })
+    });
+
+    closeModal('rejectPendingModal');
+    toast(`تم رفض طلب تسجيل "${record?.name||'المستخدم'}"`, 'warning');
+    addAdminLog(`تم رفض طلب تسجيل المستخدم: ${record?.name||'—'} | السبب: ${reason}`, 'warning');
+    await loadPendingUsers();
+
+  } catch (err) {
+    console.error('submitRejectPending:', err);
+    toast('حدث خطأ أثناء رفض الطلب', 'error');
+  }
+}
+
+// ── Export pending CSV ────────────────────────────
+function exportPendingCSV() {
+  const rows = allPendingData.map(u => [
+    u.name||'', u.email||'', u.role||'', u.country||'',
+    u.company_name||'', u.phone||'', u.status||'',
+    u.created_date ? new Date(u.created_date).toLocaleDateString('ar-SA') : '',
+    u.reviewed_by||'', u.rejection_reason||''
+  ]);
+  downloadCSV(
+    ['الاسم','البريد الإلكتروني','الدور','الدولة','الشركة','الهاتف','الحالة','تاريخ الطلب','راجعه','سبب الرفض'],
+    rows,
+    'pending_registrations.csv'
+  );
+}
+
+// ── Add admin log helper (safe wrapper) ──────────
+function addAdminLog(msg, type = 'info') {
+  const feed = document.getElementById('systemLogsFeed');
+  if (!feed) return;
+  const icons  = { info:'fa-info-circle', success:'fa-check-circle', warning:'fa-exclamation-triangle', error:'fa-times-circle' };
+  const colors = { info:'var(--info)', success:'var(--success)', warning:'var(--warning)', error:'var(--danger)' };
+  const now    = new Date().toLocaleTimeString('ar-SA', {hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  const entry  = document.createElement('div');
+  entry.setAttribute('data-type', type);
+  entry.style.cssText = 'display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:8px;font-size:12px;background:rgba(255,255,255,0.03);margin-bottom:4px';
+  entry.innerHTML = `<i class="fas ${icons[type]||icons.info}" style="color:${colors[type]||colors.info};font-size:13px;flex-shrink:0"></i><span style="color:var(--muted);white-space:nowrap">${now}</span><span style="color:var(--light)">${msg}</span>`;
+  feed.insertBefore(entry, feed.firstChild);
+}
+</script>
+<!-- AI Assistant + PWA Manager -->
+<script src="js/countries.js"></script>
+<script src="js/whatsapp.js"></script>
+<script src="js/chatbot.js"></script>
+</body>
+</html>

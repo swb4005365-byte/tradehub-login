@@ -1,0 +1,1041 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>إتمام الطلب - TradeHub Pro</title>
+  <!-- PWA -->
+  <meta name="theme-color" content="#f59e0b" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-title" content="TradeHub Pro" />
+  <link rel="manifest" href="manifest.json" />
+  <link rel="apple-touch-icon" href="icons/icon-192x192.png" />
+  <link rel="icon" type="image/svg+xml" href="icons/icon.svg" />
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" />
+  <link rel="stylesheet" href="css/style.css" />
+
+  <!-- Auth Guard: requires login -->
+  <script src="js/auth.js"></script>
+  <script>
+    (function authGuard() {
+      const session = typeof getSession === 'function' ? getSession() : null;
+      if (!session) {
+        window.location.replace('auth.html?mode=login&next=checkout.html');
+        document.documentElement.style.visibility = 'hidden';
+        return;
+      }
+      const now = Math.floor(Date.now() / 1000);
+      if (session.exp && session.exp < now) {
+        localStorage.removeItem('tradehub_token');
+        window.location.replace('auth.html?mode=login&expired=1&next=checkout.html');
+        document.documentElement.style.visibility = 'hidden';
+        return;
+      }
+      document.documentElement.style.visibility = 'visible';
+    })();
+  </script>
+
+  <style>
+    /* ── Page Layout ── */
+    .checkout-page { padding: 28px 0 60px; }
+    .checkout-layout { display: grid; grid-template-columns: 1fr 360px; gap: 28px; align-items: start; }
+
+    /* ── Steps Progress ── */
+    .checkout-steps {
+      display: flex; align-items: center; justify-content: center;
+      gap: 0; margin-bottom: 32px; padding: 20px;
+      background: white; border-radius: var(--radius-md);
+      border: 1px solid var(--border); box-shadow: var(--shadow-sm);
+    }
+    .co-step { display: flex; flex-direction: column; align-items: center; gap: 6px; cursor: default; }
+    .co-step-circle {
+      width: 44px; height: 44px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 16px; font-weight: 800;
+      border: 2px solid var(--border); background: white; color: var(--text-light);
+      transition: all 0.3s;
+    }
+    .co-step-circle.done   { background: var(--success); border-color: var(--success); color: white; }
+    .co-step-circle.active { background: var(--primary); border-color: var(--primary); color: white; box-shadow: 0 0 0 4px rgba(255,107,53,0.15); }
+    .co-step-label { font-size: 12px; color: var(--text-light); font-weight: 600; white-space: nowrap; }
+    .co-step-label.active { color: var(--primary); }
+    .co-step-label.done   { color: var(--success); }
+    .co-step-line { flex: 1; min-width: 50px; height: 2px; background: var(--border); margin-bottom: 18px; transition: background 0.3s; }
+    .co-step-line.done { background: var(--success); }
+
+    /* ── Step Panels ── */
+    .co-panel { display: none; }
+    .co-panel.active { display: block; }
+
+    /* ── Section card ── */
+    .co-card {
+      background: white; border: 1px solid var(--border);
+      border-radius: var(--radius-md); padding: 24px;
+      margin-bottom: 20px; box-shadow: var(--shadow-sm);
+    }
+    .co-card-title {
+      font-size: 16px; font-weight: 800; color: var(--text-dark);
+      margin-bottom: 18px; display: flex; align-items: center; gap: 10px;
+      padding-bottom: 14px; border-bottom: 1px solid var(--border);
+    }
+    .co-card-title i { color: var(--primary); }
+
+    /* ── Shipping form ── */
+    .addr-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    .addr-full  { grid-column: 1 / -1; }
+
+    /* ── Saved addresses ── */
+    .saved-addr-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px; }
+    .saved-addr-card {
+      border: 2px solid var(--border); border-radius: var(--radius-sm);
+      padding: 12px 16px; cursor: pointer; transition: var(--transition);
+      display: flex; align-items: flex-start; gap: 12px;
+    }
+    .saved-addr-card:hover    { border-color: var(--primary-light); }
+    .saved-addr-card.selected { border-color: var(--primary); background: var(--primary-light); }
+    .saved-addr-card input[type=radio] { accent-color: var(--primary); margin-top: 2px; flex-shrink: 0; }
+    .saved-addr-info { flex: 1; }
+    .saved-addr-name { font-size: 14px; font-weight: 700; color: var(--text-dark); }
+    .saved-addr-line { font-size: 12px; color: var(--text-light); margin-top: 2px; }
+
+    /* ── Payment methods ── */
+    .payment-methods { display: flex; flex-direction: column; gap: 12px; }
+    .pay-method-card {
+      border: 2px solid var(--border); border-radius: var(--radius-sm);
+      padding: 14px 16px; cursor: pointer; transition: var(--transition);
+      display: flex; align-items: center; gap: 14px;
+    }
+    .pay-method-card:hover    { border-color: var(--primary-light); }
+    .pay-method-card.selected { border-color: var(--primary); background: var(--primary-light); }
+    .pay-method-card input[type=radio] { accent-color: var(--primary); }
+    .pay-method-icon { font-size: 22px; width: 40px; text-align: center; }
+    .pay-method-info { flex: 1; }
+    .pay-method-name { font-size: 14px; font-weight: 700; color: var(--text-dark); }
+    .pay-method-desc { font-size: 12px; color: var(--text-light); }
+    .pay-method-badge { font-size: 11px; background: var(--success); color: white; padding: 2px 8px; border-radius: 20px; }
+
+    /* Card inputs section */
+    .card-fields { margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--border); display: none; }
+    .card-fields.show { display: block; }
+    .card-number-wrap { position: relative; }
+    .card-brand-icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); font-size: 20px; }
+
+    /* ── Order summary (sidebar) ── */
+    .order-summary { background: white; border: 1px solid var(--border); border-radius: var(--radius-md); overflow: hidden; position: sticky; top: 80px; }
+    .summary-head { background: var(--secondary); color: white; padding: 16px 20px; }
+    .summary-head h3 { font-size: 15px; font-weight: 700; }
+    .summary-body { padding: 18px 20px; }
+    .summary-item { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--border); }
+    .summary-item:last-of-type { border-bottom: none; }
+    .summary-item-img { width: 44px; height: 44px; border-radius: 6px; object-fit: cover; flex-shrink: 0; }
+    .summary-item-info { flex: 1; min-width: 0; }
+    .summary-item-name { font-size: 12px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .summary-item-qty  { font-size: 11px; color: var(--text-light); }
+    .summary-item-price { font-size: 13px; font-weight: 800; color: var(--primary); }
+    .summary-divider { height: 1px; background: var(--border); margin: 14px 0; }
+    .summary-row { display: flex; justify-content: space-between; font-size: 13px; color: var(--text-mid); margin-bottom: 8px; }
+    .summary-row.total { font-size: 17px; font-weight: 800; color: var(--text-dark); margin-top: 8px; }
+    .summary-security { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--text-light); justify-content: center; margin-top: 12px; }
+
+    /* ── Action buttons ── */
+    .co-btn-row { display: flex; gap: 12px; margin-top: 24px; }
+    .co-btn-row .btn-back {
+      padding: 12px 20px; background: white; border: 1.5px solid var(--border);
+      border-radius: var(--radius-md); color: var(--text-mid); font-size: 14px;
+      font-weight: 600; cursor: pointer; font-family: inherit; transition: var(--transition);
+    }
+    .co-btn-row .btn-back:hover { border-color: var(--primary); color: var(--primary); }
+    .co-btn-row .btn-next {
+      flex: 1; padding: 13px; background: var(--primary); color: white;
+      border: none; border-radius: var(--radius-md); font-size: 15px; font-weight: 700;
+      cursor: pointer; font-family: inherit; transition: var(--transition);
+      display: flex; align-items: center; justify-content: center; gap: 10px;
+    }
+    .co-btn-row .btn-next:hover:not(:disabled) { background: var(--primary-dark); transform: translateY(-1px); }
+    .co-btn-row .btn-next:disabled { opacity: 0.65; cursor: not-allowed; }
+    .btn-spinner { width: 18px; height: 18px; border: 2px solid rgba(255,255,255,0.3); border-top-color: white; border-radius: 50%; animation: spin 0.7s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── Confirmation step ── */
+    .confirm-success {
+      text-align: center; padding: 30px 20px;
+    }
+    .confirm-icon {
+      width: 90px; height: 90px; border-radius: 50%;
+      background: linear-gradient(135deg,#10b981,#059669);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 40px; color: white; margin: 0 auto 20px;
+      animation: popIn 0.5s cubic-bezier(0.36,0.07,0.19,0.97);
+    }
+    @keyframes popIn { 0%{transform:scale(0)} 60%{transform:scale(1.1)} 100%{transform:scale(1)} }
+    .order-num-badge {
+      display: inline-block; background: linear-gradient(135deg,var(--primary),var(--primary-dark));
+      color: white; padding: 8px 24px; border-radius: 30px;
+      font-size: 18px; font-weight: 800; font-family: monospace;
+      letter-spacing: 2px; margin: 10px 0 20px;
+    }
+    .confirm-details {
+      background: #f8fafc; border: 1px solid var(--border); border-radius: 12px;
+      padding: 16px 20px; margin: 20px 0; text-align: right;
+    }
+    .confirm-details .cd-row {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 8px 0; border-bottom: 1px solid var(--border); font-size: 13px;
+    }
+    .confirm-details .cd-row:last-child { border-bottom: none; }
+    .confirm-details .cd-label { color: var(--text-light); }
+    .confirm-details .cd-value { font-weight: 700; color: var(--text-dark); }
+    .tracking-box {
+      background: linear-gradient(135deg,#eff6ff,#dbeafe);
+      border: 1.5px solid #93c5fd; border-radius: 12px;
+      padding: 16px 20px; margin: 16px 0;
+    }
+    .tracking-box h4 { color: #1e40af; font-size: 14px; font-weight: 800; margin-bottom: 8px; }
+    .tracking-steps { display: flex; flex-direction: column; gap: 8px; }
+    .tracking-step-item { display: flex; align-items: center; gap: 10px; font-size: 13px; }
+    .tracking-step-item .ts-dot {
+      width: 24px; height: 24px; border-radius: 50%; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center; font-size: 11px; color: white;
+    }
+    .ts-dot.done    { background: var(--success); }
+    .ts-dot.pending { background: var(--text-light); }
+
+    /* ── Status badges ── */
+    .status-badge {
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 700;
+    }
+    .status-pending    { background:#fff3cd; color:#856404; }
+    .status-processing { background:#cfe2ff; color:#084298; }
+    .status-shipped    { background:#d1ecf1; color:#0c5460; }
+    .status-delivered  { background:#d4edda; color:#155724; }
+    .status-cancelled  { background:#f8d7da; color:#721c24; }
+
+    /* ── Responsive ── */
+    @media (max-width: 900px) {
+      .checkout-layout { grid-template-columns: 1fr; }
+      .order-summary { position: static; }
+      .addr-grid { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 600px) {
+      .checkout-steps { gap: 0; padding: 14px; }
+      .co-step-circle { width: 36px; height: 36px; font-size: 14px; }
+      .co-step-line { min-width: 30px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ═══════════════════════════ HEADER ═══════════════════════════ -->
+<header class="header">
+  <div class="container">
+    <a href="index.html" class="logo">
+      <span class="logo-dynamic">
+        <div class="logo-icon"><i class="fas fa-globe-asia"></i></div>
+        Trade<span>Hub</span>
+      </span>
+    </a>
+    <nav class="header-nav" aria-label="التنقل الرئيسي">
+      <a href="products.html"><i class="fas fa-th-large"></i> المنتجات</a>
+      <a href="cart.html"><i class="fas fa-shopping-cart"></i> السلة</a>
+      <a href="my-orders.html"><i class="fas fa-box"></i> طلباتي</a>
+    </nav>
+    <div id="headerUserMenu"></div>
+  </div>
+</header>
+
+<div class="toast-container" id="toastContainer"></div>
+
+<main class="checkout-page">
+  <div class="container">
+
+    <!-- Page title -->
+    <div style="margin-bottom:20px">
+      <h1 style="font-size:22px;font-weight:800;color:var(--text-dark)">
+        <i class="fas fa-credit-card" style="color:var(--primary)"></i> إتمام الطلب
+      </h1>
+      <p style="font-size:13px;color:var(--text-light)">أكمل خطوات الطلب بأمان</p>
+    </div>
+
+    <!-- ── Steps Progress Bar ── -->
+    <div class="checkout-steps">
+      <div class="co-step">
+        <div class="co-step-circle active" id="stepCircle1"><i class="fas fa-truck"></i></div>
+        <div class="co-step-label active" id="stepLabel1">عنوان الشحن</div>
+      </div>
+      <div class="co-step-line" id="stepLine1"></div>
+      <div class="co-step">
+        <div class="co-step-circle" id="stepCircle2"><i class="fas fa-credit-card"></i></div>
+        <div class="co-step-label" id="stepLabel2">طريقة الدفع</div>
+      </div>
+      <div class="co-step-line" id="stepLine2"></div>
+      <div class="co-step">
+        <div class="co-step-circle" id="stepCircle3"><i class="fas fa-check"></i></div>
+        <div class="co-step-label" id="stepLabel3">تأكيد الطلب</div>
+      </div>
+    </div>
+
+    <div class="checkout-layout">
+      <!-- ══ LEFT: Steps content ══ -->
+      <div>
+
+        <!-- ─────────── STEP 1: SHIPPING ─────────── -->
+        <div class="co-panel active" id="coPanel1">
+
+          <!-- Saved addresses -->
+          <div class="co-card" id="savedAddrSection" style="display:none">
+            <div class="co-card-title">
+              <i class="fas fa-map-marker-alt"></i> عناوين محفوظة
+              <button onclick="toggleNewAddrForm()" id="addNewAddrBtn"
+                style="margin-right:auto;background:none;border:1px solid var(--primary);color:var(--primary);padding:4px 12px;border-radius:6px;font-size:12px;cursor:pointer;font-family:inherit">
+                <i class="fas fa-plus"></i> عنوان جديد
+              </button>
+            </div>
+            <div class="saved-addr-list" id="savedAddrList"></div>
+          </div>
+
+          <!-- New shipping address form -->
+          <div class="co-card" id="newAddrForm">
+            <div class="co-card-title"><i class="fas fa-map-marker-alt"></i> عنوان الشحن</div>
+            <div class="addr-grid">
+              <div class="form-group addr-full">
+                <label class="form-label">الاسم الكامل (المستلم) <span style="color:var(--danger)">*</span></label>
+                <div class="input-icon-wrap">
+                  <i class="fas fa-user input-icon"></i>
+                  <input type="text" class="form-control" id="shippingName" placeholder="الاسم الكامل" style="padding-right:38px" />
+                </div>
+              </div>
+              <div class="form-group">
+                <label class="form-label">رقم الهاتف <span style="color:var(--danger)">*</span></label>
+                <div class="input-icon-wrap">
+                  <i class="fas fa-phone input-icon"></i>
+                  <input type="tel" class="form-control" id="shippingPhone" placeholder="+966 5X XXX XXXX" style="padding-right:38px" />
+                </div>
+              </div>
+              <div class="form-group">
+                <label class="form-label">الدولة <span style="color:var(--danger)">*</span></label>
+                <div class="input-icon-wrap">
+                  <i class="fas fa-globe input-icon"></i>
+                  <select class="form-control" id="shippingCountry" style="padding-right:38px">
+                    <option value="">— اختر الدولة —</option>
+                    <option value="SA">🇸🇦 المملكة العربية السعودية</option>
+                    <option value="AE">🇦🇪 الإمارات العربية المتحدة</option>
+                    <option value="EG">🇪🇬 مصر</option>
+                    <option value="KW">🇰🇼 الكويت</option>
+                    <option value="QA">🇶🇦 قطر</option>
+                    <option value="BH">🇧🇭 البحرين</option>
+                    <option value="OM">🇴🇲 عُمان</option>
+                    <option value="JO">🇯🇴 الأردن</option>
+                    <option value="SA">🇸🇦 السعودية</option>
+                    <option value="LB">🇱🇧 لبنان</option>
+                    <option value="IQ">🇮🇶 العراق</option>
+                    <option value="MA">🇲🇦 المغرب</option>
+                    <option value="TR">🇹🇷 تركيا</option>
+                    <option value="OTHER">🌍 دولة أخرى</option>
+                  </select>
+                </div>
+              </div>
+              <div class="form-group">
+                <label class="form-label">المدينة <span style="color:var(--danger)">*</span></label>
+                <div class="input-icon-wrap">
+                  <i class="fas fa-city input-icon"></i>
+                  <input type="text" class="form-control" id="shippingCity" placeholder="الرياض، دبي، القاهرة..." style="padding-right:38px" />
+                </div>
+              </div>
+              <div class="form-group">
+                <label class="form-label">الحي / المنطقة</label>
+                <input type="text" class="form-control" id="shippingDistrict" placeholder="اسم الحي أو المنطقة" />
+              </div>
+              <div class="form-group">
+                <label class="form-label">الرمز البريدي</label>
+                <input type="text" class="form-control" id="shippingPostal" placeholder="XXXXX" />
+              </div>
+              <div class="form-group addr-full">
+                <label class="form-label">عنوان الشارع <span style="color:var(--danger)">*</span></label>
+                <input type="text" class="form-control" id="shippingStreet" placeholder="اسم الشارع ورقم المبنى" />
+              </div>
+              <div class="form-group">
+                <label class="form-label">رقم / اسم المبنى</label>
+                <input type="text" class="form-control" id="shippingBuilding" placeholder="المبنى رقم..." />
+              </div>
+              <div class="form-group" style="display:flex;align-items:flex-end">
+                <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;color:var(--text-mid)">
+                  <input type="checkbox" id="saveAddrCheck" style="accent-color:var(--primary)" checked />
+                  حفظ هذا العنوان لاستخدامه لاحقاً
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <!-- Delivery options -->
+          <div class="co-card">
+            <div class="co-card-title"><i class="fas fa-shipping-fast"></i> خيارات التوصيل</div>
+            <div style="display:flex;flex-direction:column;gap:10px">
+              <label class="saved-addr-card" id="delivOpt1" onclick="selectDelivery('standard',this)">
+                <input type="radio" name="delivery" value="standard" checked />
+                <div style="flex:1">
+                  <div style="font-size:14px;font-weight:700">🚚 شحن عادي</div>
+                  <div style="font-size:12px;color:var(--text-light)">يصل خلال 7-14 يوم عمل</div>
+                </div>
+                <div style="font-size:14px;font-weight:800;color:var(--primary)" id="delivPrice1">$25.00</div>
+              </label>
+              <label class="saved-addr-card" id="delivOpt2" onclick="selectDelivery('express',this)">
+                <input type="radio" name="delivery" value="express" />
+                <div style="flex:1">
+                  <div style="font-size:14px;font-weight:700">✈️ شحن سريع</div>
+                  <div style="font-size:12px;color:var(--text-light)">يصل خلال 3-5 أيام عمل</div>
+                </div>
+                <div style="font-size:14px;font-weight:800;color:var(--primary)">$45.00</div>
+              </label>
+              <label class="saved-addr-card" id="delivOpt3" onclick="selectDelivery('free',this)">
+                <input type="radio" name="delivery" value="free" id="freeShipOption" />
+                <div style="flex:1">
+                  <div style="font-size:14px;font-weight:700">🎁 شحن مجاني</div>
+                  <div style="font-size:12px;color:var(--text-light)">للطلبات أكثر من $500 — يصل 10-21 يوم</div>
+                </div>
+                <div style="font-size:14px;font-weight:800;color:var(--success)">مجاناً</div>
+              </label>
+            </div>
+          </div>
+
+          <!-- Notes -->
+          <div class="co-card">
+            <div class="co-card-title"><i class="fas fa-sticky-note"></i> ملاحظات للطلب (اختياري)</div>
+            <textarea class="form-control" id="orderNotes" rows="3"
+              placeholder="أي تعليمات خاصة للتسليم، مواعيد مفضلة..."></textarea>
+          </div>
+
+          <div class="co-btn-row">
+            <button class="btn-back" onclick="window.location.href='cart.html'">
+              <i class="fas fa-arrow-right"></i> العودة للسلة
+            </button>
+            <button class="btn-next" onclick="goToStep2()">
+              المتابعة للدفع <i class="fas fa-arrow-left"></i>
+            </button>
+          </div>
+        </div><!-- /coPanel1 -->
+
+        <!-- ─────────── STEP 2: PAYMENT ─────────── -->
+        <div class="co-panel" id="coPanel2">
+          <div class="co-card">
+            <div class="co-card-title"><i class="fas fa-credit-card"></i> طريقة الدفع</div>
+
+            <div class="payment-methods" id="paymentMethods">
+              <label class="pay-method-card selected" onclick="selectPayment('visa',this)" id="payVisa">
+                <input type="radio" name="payment" value="visa" checked />
+                <div class="pay-method-icon">💳</div>
+                <div class="pay-method-info">
+                  <div class="pay-method-name">بطاقة فيزا / ماستركارد</div>
+                  <div class="pay-method-desc">أمان SSL كامل — مدعوم من Stripe</div>
+                </div>
+                <span class="pay-method-badge">الأكثر شيوعاً</span>
+              </label>
+
+              <label class="pay-method-card" onclick="selectPayment('paypal',this)" id="payPaypal">
+                <input type="radio" name="payment" value="paypal" />
+                <div class="pay-method-icon">🅿️</div>
+                <div class="pay-method-info">
+                  <div class="pay-method-name">PayPal</div>
+                  <div class="pay-method-desc">حماية المشتري من PayPal</div>
+                </div>
+              </label>
+
+              <label class="pay-method-card" onclick="selectPayment('stc',this)" id="payStc">
+                <input type="radio" name="payment" value="stc" />
+                <div class="pay-method-icon">📱</div>
+                <div class="pay-method-info">
+                  <div class="pay-method-name">STC Pay</div>
+                  <div class="pay-method-desc">دفع سريع عبر رقم الجوال</div>
+                </div>
+              </label>
+
+              <label class="pay-method-card" onclick="selectPayment('bank',this)" id="payBank">
+                <input type="radio" name="payment" value="bank" />
+                <div class="pay-method-icon">🏦</div>
+                <div class="pay-method-info">
+                  <div class="pay-method-name">تحويل بنكي</div>
+                  <div class="pay-method-desc">يُؤخذ برقم المرجع — يُفعَّل خلال 24h</div>
+                </div>
+              </label>
+
+              <label class="pay-method-card" onclick="selectPayment('cod',this)" id="payCod">
+                <input type="radio" name="payment" value="cod" />
+                <div class="pay-method-icon">💵</div>
+                <div class="pay-method-info">
+                  <div class="pay-method-name">الدفع عند الاستلام</div>
+                  <div class="pay-method-desc">للطلبات المحلية فقط — + $5 رسوم</div>
+                </div>
+              </label>
+            </div>
+
+            <!-- Card details (shown for visa) -->
+            <div class="card-fields show" id="cardFields">
+              <div style="display:grid;grid-template-columns:1fr;gap:14px">
+                <div class="form-group" style="margin-bottom:0">
+                  <label class="form-label">رقم البطاقة</label>
+                  <div class="card-number-wrap">
+                    <input type="text" class="form-control" id="cardNumber"
+                      placeholder="XXXX XXXX XXXX XXXX"
+                      maxlength="19" oninput="formatCardNumber(this)" style="padding-left:44px" />
+                    <span class="card-brand-icon" id="cardBrandIcon">💳</span>
+                  </div>
+                </div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+                  <div class="form-group" style="margin-bottom:0">
+                    <label class="form-label">تاريخ الانتهاء</label>
+                    <input type="text" class="form-control" id="cardExpiry"
+                      placeholder="MM/YY" maxlength="5" oninput="formatExpiry(this)" />
+                  </div>
+                  <div class="form-group" style="margin-bottom:0">
+                    <label class="form-label">CVV</label>
+                    <div class="input-icon-wrap">
+                      <input type="password" class="form-control" id="cardCvv" placeholder="XXX" maxlength="4" />
+                      <button class="toggle-pass" type="button" onclick="toggleCvv(this)">
+                        <i class="fas fa-eye"></i>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+                <div class="form-group" style="margin-bottom:0">
+                  <label class="form-label">اسم حامل البطاقة</label>
+                  <input type="text" class="form-control" id="cardName" placeholder="الاسم كما يظهر على البطاقة" />
+                </div>
+              </div>
+              <!-- Demo notice -->
+              <div style="margin-top:14px;padding:10px 14px;background:#eff6ff;border-radius:8px;font-size:12px;color:#1e40af;display:flex;align-items:center;gap:8px">
+                <i class="fas fa-info-circle"></i>
+                وضع تجريبي — لا تُدخل بيانات بطاقة حقيقية. استخدم: 4242 4242 4242 4242
+              </div>
+            </div>
+          </div>
+
+          <div class="co-btn-row">
+            <button class="btn-back" onclick="goToStep1()">
+              <i class="fas fa-arrow-right"></i> السابق
+            </button>
+            <button class="btn-next" onclick="goToStep3()">
+              مراجعة الطلب <i class="fas fa-arrow-left"></i>
+            </button>
+          </div>
+        </div><!-- /coPanel2 -->
+
+        <!-- ─────────── STEP 3: CONFIRMATION ─────────── -->
+        <div class="co-panel" id="coPanel3">
+          <div class="co-card" id="orderReviewCard">
+            <div class="co-card-title"><i class="fas fa-clipboard-check"></i> مراجعة الطلب</div>
+            <div id="reviewContent">
+              <!-- filled by JS -->
+            </div>
+          </div>
+
+          <div class="co-btn-row" id="confirmBtnRow">
+            <button class="btn-back" onclick="goToStep2()">
+              <i class="fas fa-arrow-right"></i> السابق
+            </button>
+            <button class="btn-next" id="placeOrderBtn" onclick="placeOrder()" style="background:var(--success)">
+              <i class="fas fa-check-circle"></i> تأكيد وإتمام الطلب
+            </button>
+          </div>
+        </div><!-- /coPanel3 -->
+
+      </div><!-- /left -->
+
+      <!-- ══ RIGHT: Order Summary ══ -->
+      <aside class="order-summary">
+        <div class="summary-head">
+          <h3><i class="fas fa-shopping-bag"></i> ملخص طلبك</h3>
+        </div>
+        <div class="summary-body">
+          <div id="summaryItems">
+            <!-- filled by JS -->
+          </div>
+          <div class="summary-divider"></div>
+          <div class="summary-row">
+            <span>المجموع الفرعي</span>
+            <span id="sumSubtotal">$0.00</span>
+          </div>
+          <div class="summary-row" style="color:var(--success)">
+            <span><i class="fas fa-tag"></i> التوفير (5%)</span>
+            <span id="sumDiscount">-$0.00</span>
+          </div>
+          <div class="summary-row">
+            <span>رسوم الشحن</span>
+            <span id="sumShipping">$25.00</span>
+          </div>
+          <div class="summary-row total">
+            <span>الإجمالي</span>
+            <span id="sumTotal">$0.00</span>
+          </div>
+          <div class="summary-security">
+            <i class="fas fa-lock"></i> دفع آمن مشفر بـ SSL 256-bit
+          </div>
+        </div>
+      </aside>
+    </div><!-- /checkout-layout -->
+
+  </div><!-- /container -->
+</main>
+
+<!-- ══ SUCCESS OVERLAY (shown after order placed) ══ -->
+<div id="successOverlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:9999;display:none;align-items:center;justify-content:center;padding:20px">
+  <div style="background:white;border-radius:20px;padding:40px;max-width:500px;width:100%;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,0.3)">
+    <div class="confirm-icon" style="margin-bottom:16px"><i class="fas fa-check"></i></div>
+    <h2 style="font-size:24px;font-weight:800;color:var(--text-dark);margin-bottom:8px">تم تأكيد طلبك! 🎉</h2>
+    <p style="font-size:14px;color:var(--text-light);margin-bottom:16px">شكراً لطلبك من TradeHub Pro</p>
+    <div class="order-num-badge" id="successOrderNum">ORD-0000</div>
+    <p style="font-size:13px;color:var(--text-mid);margin:14px 0">
+      سيتم معالجة طلبك وإشعارك بتفاصيل الشحن قريباً.
+    </p>
+    <div style="display:flex;flex-direction:column;gap:10px;margin-top:20px">
+      <a href="my-orders.html" class="btn btn-primary" style="display:block;padding:12px">
+        <i class="fas fa-box"></i> تتبع طلبي
+      </a>
+      <a href="products.html" style="display:block;padding:12px;border:1.5px solid var(--border);border-radius:var(--radius-md);color:var(--text-mid);font-size:14px;font-weight:600">
+        <i class="fas fa-shopping-bag"></i> مواصلة التسوق
+      </a>
+    </div>
+  </div>
+</div>
+
+<script src="js/main.js"></script>
+<script>
+/* ═══════════════════════════════════════════════════════════
+   checkout.html — 3-step checkout controller
+   Integrates with: cart table, orders table, order_items,
+   shipping_addresses, auth session
+═══════════════════════════════════════════════════════════ */
+
+'use strict';
+
+// ── State ─────────────────────────────────────────────
+let _session        = null;
+let _cartItems      = [];
+let _cartSummary    = { subtotal: 0, shipping: 25, discount: 0, total: 0 };
+let _selectedDelivery = 'standard';
+let _selectedPayment  = 'visa';
+let _selectedAddrId   = null;
+let _savedAddresses   = [];
+let _currentStep      = 1;
+
+// ── Init ──────────────────────────────────────────────
+(async function init() {
+  _session = typeof getSession === 'function' ? getSession() : null;
+  if (!_session) return;
+
+  // Pre-fill shipping name from session
+  const nameEl = document.getElementById('shippingName');
+  if (nameEl && _session.name) nameEl.value = _session.name;
+
+  // Load data in parallel
+  await Promise.all([loadCartItems(), loadSavedAddresses()]);
+  updateSummaryUI();
+  // Auto-check free shipping eligibility
+  if (_cartSummary.subtotal > 500) {
+    document.getElementById('freeShipOption')?.click();
+  }
+})();
+
+// ── Cart Loading ──────────────────────────────────────
+async function loadCartItems() {
+  try {
+    if (typeof Cart !== 'undefined') {
+      _cartItems = await Cart.getItems();
+    } else {
+      const res = await fetch('tables/cart?limit=100');
+      const data = await res.json();
+      _cartItems = (data.data || []).filter(i => {
+        if (_session) return i.user_id === _session.sub;
+        return true;
+      });
+    }
+    if (!_cartItems.length) {
+      showToast('السلة فارغة! سيتم توجيهك للسلة.', 'warning');
+      setTimeout(() => window.location.href = 'cart.html', 1500);
+      return;
+    }
+    calculateSummary();
+    renderSummaryItems();
+  } catch (err) {
+    console.error('[Checkout] loadCartItems error:', err);
+  }
+}
+
+function calculateSummary() {
+  const subtotal  = _cartItems.reduce((s,i) => s + (parseFloat(i.price||0) * (i.quantity||1)), 0);
+  const discount  = subtotal * 0.05;
+  let   shipping  = _selectedDelivery === 'express' ? 45 : (_selectedDelivery === 'free' || subtotal > 500 ? 0 : 25);
+  if (_selectedDelivery === 'free') shipping = 0;
+  const cod_fee   = _selectedPayment === 'cod' ? 5 : 0;
+  const total     = subtotal - discount + shipping + cod_fee;
+  _cartSummary    = { subtotal, shipping, discount, total, cod_fee };
+}
+
+function renderSummaryItems() {
+  const container = document.getElementById('summaryItems');
+  if (!container) return;
+  container.innerHTML = _cartItems.map(item => `
+    <div class="summary-item">
+      <img src="${item.image_url || 'https://placehold.co/44x44/eee/999?text=P'}"
+           class="summary-item-img" alt="${item.product_name||''}"/>
+      <div class="summary-item-info">
+        <div class="summary-item-name">${item.product_name || 'منتج'}</div>
+        <div class="summary-item-qty">× ${item.quantity || 1}</div>
+      </div>
+      <div class="summary-item-price">$${(parseFloat(item.price||0)*(item.quantity||1)).toFixed(2)}</div>
+    </div>`).join('');
+}
+
+function updateSummaryUI() {
+  calculateSummary();
+  const { subtotal, shipping, discount, total } = _cartSummary;
+  document.getElementById('sumSubtotal').textContent  = `$${subtotal.toFixed(2)}`;
+  document.getElementById('sumDiscount').textContent  = `-$${discount.toFixed(2)}`;
+  document.getElementById('sumShipping').textContent  = shipping === 0 ? 'مجاناً 🎉' : `$${shipping.toFixed(2)}`;
+  document.getElementById('sumTotal').textContent     = `$${total.toFixed(2)}`;
+  // Also update delivery price label
+  const dp1 = document.getElementById('delivPrice1');
+  if (dp1 && _cartSummary.subtotal > 500) dp1.textContent = 'مجاناً';
+}
+
+// ── Saved Addresses ───────────────────────────────────
+async function loadSavedAddresses() {
+  if (!_session?.sub) return;
+  try {
+    const res  = await fetch(`tables/shipping_addresses?limit=20`);
+    const data = await res.json();
+    _savedAddresses = (data.data || []).filter(a => a.user_id === _session.sub);
+    if (_savedAddresses.length) {
+      renderSavedAddresses();
+      document.getElementById('savedAddrSection').style.display = 'block';
+      // Auto-select default
+      const def = _savedAddresses.find(a => a.is_default) || _savedAddresses[0];
+      if (def) selectSavedAddr(def.id);
+    }
+  } catch { /* non-critical */ }
+}
+
+function renderSavedAddresses() {
+  const list = document.getElementById('savedAddrList');
+  if (!list) return;
+  list.innerHTML = _savedAddresses.map(addr => `
+    <div class="saved-addr-card ${addr.id === _selectedAddrId ? 'selected' : ''}"
+         onclick="selectSavedAddr('${addr.id}')">
+      <input type="radio" name="savedAddr" value="${addr.id}" ${addr.id === _selectedAddrId ? 'checked' : ''} />
+      <div class="saved-addr-info">
+        <div class="saved-addr-name">${addr.full_name || ''}</div>
+        <div class="saved-addr-line">
+          ${addr.city || ''}${addr.district ? '، ' + addr.district : ''}
+          ${addr.street ? ' — ' + addr.street : ''}
+        </div>
+        <div class="saved-addr-line"><i class="fas fa-phone"></i> ${addr.phone || ''}</div>
+      </div>
+    </div>`).join('');
+}
+
+function selectSavedAddr(id) {
+  _selectedAddrId = id;
+  document.querySelectorAll('.saved-addr-card').forEach(c => {
+    c.classList.toggle('selected', c.querySelector('input')?.value === id);
+  });
+  // Hide new address form if saved addr selected
+  const addr = _savedAddresses.find(a => a.id === id);
+  if (addr) {
+    const newForm = document.getElementById('newAddrForm');
+    if (newForm) newForm.style.display = 'none';
+  }
+}
+
+function toggleNewAddrForm() {
+  _selectedAddrId = null;
+  document.querySelectorAll('.saved-addr-card').forEach(c => c.classList.remove('selected'));
+  const form = document.getElementById('newAddrForm');
+  if (form) form.style.display = form.style.display === 'none' ? 'block' : 'none';
+}
+
+// ── Delivery selection ────────────────────────────────
+function selectDelivery(type, el) {
+  _selectedDelivery = type;
+  document.querySelectorAll('[id^="delivOpt"]').forEach(c => c.classList.remove('selected'));
+  el?.closest('.saved-addr-card')?.classList.add('selected') || el?.classList.add('selected');
+  updateSummaryUI();
+}
+
+// ── Payment selection ─────────────────────────────────
+function selectPayment(type, el) {
+  _selectedPayment = type;
+  document.querySelectorAll('.pay-method-card').forEach(c => c.classList.remove('selected'));
+  el?.classList.add('selected');
+  const cardFields = document.getElementById('cardFields');
+  if (cardFields) cardFields.classList.toggle('show', type === 'visa');
+  updateSummaryUI();
+}
+
+// ── Step navigation ───────────────────────────────────
+function goToStep1() { setStep(1); }
+
+function goToStep2() {
+  // Validate shipping
+  const addrOk = _selectedAddrId || validateShippingForm();
+  if (!addrOk) return;
+  setStep(2);
+}
+
+function goToStep3() {
+  // Validate payment (minimal for demo)
+  if (_selectedPayment === 'visa') {
+    const num = document.getElementById('cardNumber')?.value?.replace(/\s/g,'');
+    if (!num || num.length < 13) { showToast('يرجى إدخال رقم بطاقة صحيح', 'error'); return; }
+  }
+  buildReview();
+  setStep(3);
+}
+
+function setStep(n) {
+  _currentStep = n;
+  [1,2,3].forEach(i => {
+    const panel  = document.getElementById('coPanel'+i);
+    const circle = document.getElementById('stepCircle'+i);
+    const label  = document.getElementById('stepLabel'+i);
+    if (panel)  panel.classList.toggle('active', i===n);
+    if (circle) {
+      circle.classList.remove('done','active');
+      if (i < n)  circle.classList.add('done');
+      if (i === n) circle.classList.add('active');
+    }
+    if (label) {
+      label.classList.remove('done','active');
+      if (i < n)  label.classList.add('done');
+      if (i === n) label.classList.add('active');
+    }
+  });
+  [1,2].forEach(i => {
+    const line = document.getElementById('stepLine'+i);
+    if (line) line.classList.toggle('done', i < n);
+  });
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function validateShippingForm() {
+  const fields = [
+    { id:'shippingName',    label:'الاسم الكامل' },
+    { id:'shippingPhone',   label:'رقم الهاتف' },
+    { id:'shippingCountry', label:'الدولة' },
+    { id:'shippingCity',    label:'المدينة' },
+    { id:'shippingStreet',  label:'عنوان الشارع' }
+  ];
+  for (const f of fields) {
+    const el = document.getElementById(f.id);
+    if (!el || !el.value.trim()) {
+      showToast(`يرجى ملء حقل: ${f.label}`, 'error');
+      el?.focus();
+      return false;
+    }
+  }
+  return true;
+}
+
+// ── Review builder ────────────────────────────────────
+function buildReview() {
+  const c = _cartSummary;
+  // Get shipping info
+  let addrHtml = '';
+  if (_selectedAddrId) {
+    const addr = _savedAddresses.find(a => a.id === _selectedAddrId);
+    if (addr) addrHtml = `${addr.full_name} — ${addr.city}, ${addr.street}`;
+  } else {
+    const name    = document.getElementById('shippingName')?.value || '';
+    const city    = document.getElementById('shippingCity')?.value || '';
+    const street  = document.getElementById('shippingStreet')?.value || '';
+    addrHtml = `${name} — ${city}, ${street}`;
+  }
+  const payLabels = { visa:'بطاقة فيزا/ماستركارد', paypal:'PayPal', stc:'STC Pay', bank:'تحويل بنكي', cod:'الدفع عند الاستلام' };
+  const delivLabels = { standard:'شحن عادي (7-14 يوم)', express:'شحن سريع (3-5 أيام)', free:'شحن مجاني' };
+
+  document.getElementById('reviewContent').innerHTML = `
+    <div style="display:flex;flex-direction:column;gap:12px">
+      <div style="background:#f8fafc;border-radius:10px;padding:14px 16px">
+        <div style="font-size:12px;color:var(--text-light);margin-bottom:6px"><i class="fas fa-truck"></i> عنوان التسليم</div>
+        <div style="font-size:14px;font-weight:600;color:var(--text-dark)">${addrHtml}</div>
+      </div>
+      <div style="background:#f8fafc;border-radius:10px;padding:14px 16px">
+        <div style="font-size:12px;color:var(--text-light);margin-bottom:6px"><i class="fas fa-credit-card"></i> طريقة الدفع</div>
+        <div style="font-size:14px;font-weight:600;color:var(--text-dark)">${payLabels[_selectedPayment]||_selectedPayment}</div>
+      </div>
+      <div style="background:#f8fafc;border-radius:10px;padding:14px 16px">
+        <div style="font-size:12px;color:var(--text-light);margin-bottom:6px"><i class="fas fa-shipping-fast"></i> طريقة الشحن</div>
+        <div style="font-size:14px;font-weight:600;color:var(--text-dark)">${delivLabels[_selectedDelivery]||_selectedDelivery}</div>
+      </div>
+      <div style="background:#f8fafc;border-radius:10px;padding:14px 16px">
+        <div style="font-size:12px;color:var(--text-light);margin-bottom:8px"><i class="fas fa-box"></i> المنتجات (${_cartItems.length})</div>
+        ${_cartItems.map(i=>`
+          <div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--border)">
+            <img src="${i.image_url||'https://placehold.co/36x36/eee/999?text=P'}" style="width:36px;height:36px;border-radius:6px;object-fit:cover"/>
+            <div style="flex:1;font-size:13px">${i.product_name||'منتج'} <span style="color:var(--text-light)">×${i.quantity||1}</span></div>
+            <div style="font-size:13px;font-weight:700;color:var(--primary)">$${(parseFloat(i.price||0)*(i.quantity||1)).toFixed(2)}</div>
+          </div>`).join('')}
+      </div>
+      <div style="background:linear-gradient(135deg,#eff6ff,#dbeafe);border:1px solid #93c5fd;border-radius:10px;padding:14px 16px">
+        <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px;color:var(--text-mid)">
+          <span>المجموع الفرعي</span><span>$${c.subtotal.toFixed(2)}</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px;color:var(--success)">
+          <span>الخصم (5%)</span><span>-$${c.discount.toFixed(2)}</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px;color:var(--text-mid)">
+          <span>الشحن</span><span>${c.shipping===0?'مجاناً':'$'+c.shipping.toFixed(2)}</span>
+        </div>
+        ${c.cod_fee ? `<div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px;color:var(--text-mid)"><span>رسوم الدفع عند الاستلام</span><span>$${c.cod_fee.toFixed(2)}</span></div>` : ''}
+        <div style="display:flex;justify-content:space-between;font-size:18px;font-weight:800;color:var(--text-dark);margin-top:8px;padding-top:8px;border-top:1px solid #93c5fd">
+          <span>الإجمالي</span><span>$${c.total.toFixed(2)}</span>
+        </div>
+      </div>
+    </div>`;
+}
+
+// ── Place Order ───────────────────────────────────────
+async function placeOrder() {
+  const btn = document.getElementById('placeOrderBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<div class="btn-spinner"></div> جارٍ تأكيد الطلب...';
+
+  try {
+    // 1. Save shipping address if new
+    let shippingAddrId = _selectedAddrId;
+    if (!shippingAddrId) {
+      const addrData = {
+        user_id:    _session?.sub || '',
+        full_name:  document.getElementById('shippingName')?.value || '',
+        phone:      document.getElementById('shippingPhone')?.value || '',
+        country:    document.getElementById('shippingCountry')?.value || '',
+        city:       document.getElementById('shippingCity')?.value || '',
+        district:   document.getElementById('shippingDistrict')?.value || '',
+        street:     document.getElementById('shippingStreet')?.value || '',
+        building:   document.getElementById('shippingBuilding')?.value || '',
+        postal_code:document.getElementById('shippingPostal')?.value || '',
+        is_default: _savedAddresses.length === 0
+      };
+      if (document.getElementById('saveAddrCheck')?.checked) {
+        const addrRes = await fetch('tables/shipping_addresses', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(addrData)
+        });
+        const saved = await addrRes.json();
+        shippingAddrId = saved.id || '';
+      }
+    }
+
+    // 2. Generate order number
+    const ts          = Date.now();
+    const orderNum    = 'ORD-' + new Date().getFullYear() + '-' + String(ts).slice(-6);
+    const delivLabels = { standard:'شحن عادي', express:'شحن سريع', free:'شحن مجاني' };
+    const payLabels   = { visa:'بطاقة فيزا/ماستركارد', paypal:'PayPal', stc:'STC Pay', bank:'تحويل بنكي', cod:'الدفع عند الاستلام' };
+
+    // 3. POST order
+    const orderData = {
+      order_number:       orderNum,
+      user_id:            _session?.sub || '',
+      user_name:          _session?.name || '',
+      user_email:         _session?.email || '',
+      status:             'pending',
+      subtotal:           _cartSummary.subtotal,
+      shipping_cost:      _cartSummary.shipping,
+      discount:           _cartSummary.discount,
+      total:              _cartSummary.total,
+      currency:           'USD',
+      payment_method:     payLabels[_selectedPayment] || _selectedPayment,
+      payment_status:     'pending',
+      shipping_address_id: shippingAddrId || '',
+      notes:              document.getElementById('orderNotes')?.value || '',
+      seller_id:          _cartItems[0]?.seller_id || '',
+      seller_name:        _cartItems[0]?.supplier || '',
+      tracking_number:    'TRK-' + Math.random().toString(36).slice(2,10).toUpperCase(),
+      estimated_delivery: delivLabels[_selectedDelivery] || 'عادي',
+      created_at:         new Date().toISOString(),
+      updated_at:         new Date().toISOString()
+    };
+
+    const orderRes = await fetch('tables/orders', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(orderData)
+    });
+    const savedOrder = await orderRes.json();
+    const orderId    = savedOrder.id;
+
+    // 4. POST order items
+    for (const item of _cartItems) {
+      await fetch('tables/order_items', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          order_id:      orderId,
+          product_id:    item.product_id || '',
+          product_name:  item.product_name || 'منتج',
+          product_image: item.image_url || '',
+          supplier:      item.supplier || '',
+          seller_id:     item.seller_id || '',
+          quantity:      item.quantity || 1,
+          unit_price:    parseFloat(item.price || 0),
+          total_price:   parseFloat(item.price || 0) * (item.quantity || 1)
+        })
+      }).catch(() => {});
+    }
+
+    // 5. Clear cart
+    if (typeof Cart !== 'undefined') {
+      await Cart.clearAll?.();
+    } else {
+      for (const item of _cartItems) {
+        await fetch(`tables/cart/${item.id}`, { method: 'DELETE' }).catch(()=>{});
+      }
+    }
+
+    // 6. Show success
+    document.getElementById('successOrderNum').textContent = orderNum;
+    const overlay = document.getElementById('successOverlay');
+    if (overlay) { overlay.style.display = 'flex'; }
+
+    showToast('تم تأكيد طلبك بنجاح! 🎉', 'success', 5000);
+
+  } catch (err) {
+    console.error('[Checkout] placeOrder error:', err);
+    showToast('حدث خطأ أثناء تأكيد الطلب. يرجى المحاولة مرة أخرى.', 'error', 5000);
+    btn.disabled = false;
+    btn.innerHTML = '<i class="fas fa-check-circle"></i> تأكيد وإتمام الطلب';
+  }
+}
+
+// ── Card formatting helpers ───────────────────────────
+function formatCardNumber(input) {
+  let val = input.value.replace(/\D/g,'').slice(0,16);
+  input.value = val.match(/.{1,4}/g)?.join(' ') || val;
+  // Brand detection
+  const icon = document.getElementById('cardBrandIcon');
+  if (icon) {
+    if (val.startsWith('4'))  icon.textContent = '💳'; // Visa
+    else if (val.startsWith('5')) icon.textContent = '🔴'; // Mastercard
+    else if (val.startsWith('3')) icon.textContent = '🟦'; // Amex
+    else icon.textContent = '💳';
+  }
+}
+function formatExpiry(input) {
+  let val = input.value.replace(/\D/g,'').slice(0,4);
+  if (val.length > 2) val = val.slice(0,2) + '/' + val.slice(2);
+  input.value = val;
+}
+function toggleCvv(btn) {
+  const input = document.getElementById('cardCvv');
+  const icon  = btn.querySelector('i');
+  if (!input) return;
+  input.type = input.type === 'password' ? 'text' : 'password';
+  icon.className = input.type === 'password' ? 'fas fa-eye' : 'fas fa-eye-slash';
+}
+</script>
+<!-- AI Assistant + PWA Manager -->
+<script src="js/countries.js"></script>
+<script src="js/whatsapp.js"></script>
+<script src="js/chatbot.js"></script>
+</body>
+</html>

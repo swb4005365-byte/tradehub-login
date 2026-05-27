@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TradeHub Pro — غير متصل</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Cairo', 'Segoe UI', sans-serif;
+      background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+    }
+    .container {
+      text-align: center;
+      padding: 40px 20px;
+      max-width: 500px;
+    }
+    .icon-wrap {
+      width: 120px;
+      height: 120px;
+      background: rgba(245,158,11,0.1);
+      border: 2px solid rgba(245,158,11,0.3);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 30px;
+      animation: pulse 2s infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); opacity: 1; }
+      50% { transform: scale(1.05); opacity: 0.8; }
+    }
+    .icon-wrap svg {
+      width: 60px;
+      height: 60px;
+      fill: #f59e0b;
+    }
+    .logo {
+      font-size: 28px;
+      font-weight: 900;
+      color: #f59e0b;
+      margin-bottom: 10px;
+      letter-spacing: -0.5px;
+    }
+    h1 {
+      font-size: 22px;
+      color: #e2e8f0;
+      margin-bottom: 12px;
+    }
+    p {
+      color: #94a3b8;
+      font-size: 15px;
+      line-height: 1.7;
+      margin-bottom: 30px;
+    }
+    .cached-pages {
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 30px;
+      text-align: right;
+    }
+    .cached-pages h3 {
+      color: #f59e0b;
+      margin-bottom: 15px;
+      font-size: 14px;
+    }
+    .cached-pages a {
+      display: block;
+      color: #94a3b8;
+      text-decoration: none;
+      padding: 8px 0;
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+      font-size: 14px;
+      transition: color 0.2s;
+    }
+    .cached-pages a:hover { color: #f59e0b; }
+    .cached-pages a:last-child { border-bottom: none; }
+    .btn-retry {
+      background: linear-gradient(135deg, #f59e0b, #d97706);
+      color: #fff;
+      border: none;
+      padding: 14px 40px;
+      border-radius: 50px;
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.3s;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .btn-retry:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(245,158,11,0.4); }
+    .status-bar {
+      margin-top: 20px;
+      font-size: 13px;
+      color: #64748b;
+    }
+    .status-bar span { color: #f87171; }
+    .status-bar.online span { color: #4ade80; }
+  </style>
+</head>
+<body>
+<div class="container">
+  <div class="icon-wrap">
+    <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+      <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+    </svg>
+  </div>
+
+  <div class="logo">TradeHub Pro</div>
+  <h1>🔌 أنت غير متصل بالإنترنت</h1>
+  <p>
+    يبدو أن اتصالك بالإنترنت منقطع حالياً.<br/>
+    يمكنك تصفح الصفحات المحفوظة مسبقاً أدناه أو إعادة المحاولة عند استعادة الاتصال.
+  </p>
+
+  <div class="cached-pages">
+    <h3>📂 الصفحات المتاحة بدون إنترنت:</h3>
+    <a href="/index.html">🏠 الصفحة الرئيسية</a>
+    <a href="/products.html">🛍️ المنتجات</a>
+    <a href="/cart.html">🛒 سلة التسوق</a>
+    <a href="/my-orders.html">📦 طلباتي</a>
+    <a href="/auth.html">🔐 تسجيل الدخول</a>
+  </div>
+
+  <button class="btn-retry" onclick="retryConnection()">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+      <path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/>
+    </svg>
+    إعادة المحاولة
+  </button>
+
+  <div class="status-bar" id="statusBar">
+    الحالة: <span>غير متصل ❌</span>
+  </div>
+</div>
+
+<script>
+function retryConnection() {
+  if (navigator.onLine) {
+    window.location.href = '/index.html';
+  } else {
+    const btn = document.querySelector('.btn-retry');
+    btn.textContent = '⏳ لا يوجد اتصال بعد...';
+    setTimeout(() => { btn.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg> إعادة المحاولة'; }, 2000);
+  }
+}
+
+window.addEventListener('online', () => {
+  document.getElementById('statusBar').className = 'status-bar online';
+  document.getElementById('statusBar').innerHTML = 'الحالة: <span>متصل ✅ — يمكنك الانتقال للموقع</span>';
+  setTimeout(() => window.location.href = '/index.html', 1500);
+});
+
+window.addEventListener('offline', () => {
+  document.getElementById('statusBar').className = 'status-bar';
+  document.getElementById('statusBar').innerHTML = 'الحالة: <span>غير متصل ❌</span>';
+});
+</script>
+</body>
+</html>
