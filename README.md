@@ -1,2 +1,0 @@
-# tradehub-login
-تسوق اكتروني 
